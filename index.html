@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Scadenzario">
-<meta name="app-version" content="4">
+<meta name="app-version" content="5">
 <style>
 :root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 body{margin:0}
@@ -678,24 +678,60 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
 
   var localVer = (document.querySelector('meta[name="app-version"]') || {}).content || '';
   var lastCheck = 0;
-  function checkUpdate() {
-    if (!localVer || Date.now() - lastCheck < 600000) return;
-    lastCheck = Date.now();
-    fetch(location.pathname, { cache: 'no-store' })
-      .then(function (r) { return r.ok ? r.text() : ''; })
-      .then(function (t) {
-        var m = t.match(/<meta name="app-version" content="([^"]+)"/);
-        if (m && m[1] !== localVer) showSheet('update-sheet', true);
-      })
-      .catch(function () {});
+  var checkingUpdate = false;
+  var availableVer = '';
+  var UPDATE_DISMISSED_KEY = 'scadenzario.update.dismissed';
+
+  function dismissedVersion() {
+    try { return sessionStorage.getItem(UPDATE_DISMISSED_KEY) || ''; }
+    catch (e) { return ''; }
   }
+  function checkUpdate(force) {
+    var now = Date.now();
+    if (!localVer || checkingUpdate || (!force && now - lastCheck < 60000)) return;
+    lastCheck = now;
+    checkingUpdate = true;
+
+    /* Il parametro univoco evita di leggere una copia HTML in cache. */
+    var checkUrl = new URL(location.href);
+    checkUrl.searchParams.set('_version_check', String(now));
+    fetch(checkUrl.href, { cache: 'no-store', credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.text() : ''; })
+      .then(function (html) {
+        var doc = new DOMParser().parseFromString(html, 'text/html');
+        var meta = doc.querySelector('meta[name="app-version"]');
+        var remoteVer = meta ? (meta.getAttribute('content') || '') : '';
+        if (remoteVer && remoteVer !== localVer) {
+          availableVer = remoteVer;
+          if (dismissedVersion() !== remoteVer) showSheet('update-sheet', true);
+        } else {
+          availableVer = '';
+          showSheet('update-sheet', false);
+        }
+      })
+      .catch(function () {})
+      .then(function () { checkingUpdate = false; });
+  }
+
   $('aggiorna').addEventListener('click', function () {
-    var go = function () { location.reload(); };
-    fetch(location.pathname, { cache: 'reload' }).then(go, go);
+    /* Aggiunge un parametro anti-cache e carica l'HTML appena pubblicato. */
+    var url = new URL(location.href);
+    url.searchParams.delete('_version_check');
+    url.searchParams.set('_refresh', String(Date.now()));
+    location.replace(url.href);
   });
-  $('piu-tardi').addEventListener('click', function () { showSheet('update-sheet', false); });
-  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') checkUpdate(); });
-  setTimeout(checkUpdate, 1500);
+  $('piu-tardi').addEventListener('click', function () {
+    showSheet('update-sheet', false);
+    if (availableVer) {
+      try { sessionStorage.setItem(UPDATE_DISMISSED_KEY, availableVer); } catch (e) {}
+    }
+  });
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') checkUpdate(true);
+  });
+  /* Controlla subito e poi periodicamente mentre la pagina resta aperta. */
+  setTimeout(function () { checkUpdate(true); }, 1500);
+  setInterval(function () { checkUpdate(false); }, 60000);
 
   load();
   render();
