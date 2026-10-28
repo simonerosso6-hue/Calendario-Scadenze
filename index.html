@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Scadenzario">
-<meta name="app-version" content="2">
+<meta name="app-version" content="3">
 <style>
 :root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 body{margin:0}
@@ -238,6 +238,18 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
         <input id="data" type="date" required>
       </div>
       <div class="field">
+        <label for="rep">Si ripete</label>
+        <select id="rep">
+          <option value="0">Una volta sola</option>
+          <option value="1">Ogni mese</option>
+          <option value="2">Ogni 2 mesi</option>
+          <option value="3">Ogni 3 mesi</option>
+          <option value="6">Ogni 6 mesi</option>
+          <option value="12">Ogni anno</option>
+          <option value="24">Ogni 2 anni</option>
+        </select>
+      </div>
+      <div class="field" id="f-mesi">
         <label for="mesi">Dura (mesi)</label>
         <input id="mesi" type="number" inputmode="numeric" min="1" max="240" value="12">
       </div>
@@ -290,14 +302,16 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
     { k: 'ci', name: "Carta d'identità elettronica", months: 120, note: "Si può rinnovare in Comune fino a 180 giorni prima. Prenota l'appuntamento sul portale dedicato." },
     { k: 'pass', name: 'Passaporto', months: 120, note: 'Si rinnova in questura o negli uffici postali abilitati. Prenota online e controlla le regole del paese di viaggio.' },
     { k: 'pat', name: 'Patente', months: 120, note: 'Il rinnovo richiede una visita medica. Fissala qualche settimana prima della scadenza.' },
-    { k: 'rev', name: 'Revisione auto', months: 24, note: 'Va fatta entro la fine del mese di scadenza. Prenota in officina autorizzata o alla motorizzazione.' },
-    { k: 'bollo', name: 'Bollo auto', months: 12, note: "Controlla importo e scadenza sul sito dell'ACI e paga online o in tabaccheria." },
-    { k: 'rca', name: 'Assicurazione auto', months: 12, note: 'Confronta qualche preventivo un mese prima della scadenza.' },
+    { k: 'rev', name: 'Revisione auto', months: 24, rep: 24, note: 'Va fatta entro la fine del mese di scadenza. Prenota in officina autorizzata o alla motorizzazione.' },
+    { k: 'bollo', name: 'Bollo auto', months: 12, rep: 12, note: "Controlla importo e scadenza sul sito dell'ACI e paga online o in tabaccheria." },
+    { k: 'rca', name: 'Assicurazione auto', months: 12, rep: 12, note: 'Confronta qualche preventivo un mese prima della scadenza.' },
     { k: 'gar', name: 'Garanzia', months: 24, note: 'Tieni scontrino o fattura. La garanzia legale dura 24 mesi; denuncia un difetto entro 2 mesi da quando lo scopri.' },
-    { k: 'abb', name: 'Abbonamento con rinnovo automatico', months: 12, note: 'Controlla la data di rinnovo e disdici prima se non ti serve più.' },
+    { k: 'abb', name: 'Abbonamento con rinnovo automatico', months: 12, rep: 12, note: 'Controlla la data di rinnovo e disdici prima se non ti serve più.' },
+    { k: 'abbm', name: 'Abbonamento mensile', months: 1, rep: 1, note: "Controlla l'importo addebitato ogni mese e disdici se non lo usi più." },
+    { k: 'rata', name: 'Rata, affitto o bolletta', months: 1, rep: 1, note: 'Controlla che il pagamento mensile sia andato a buon fine.' },
     { k: 'prova', name: 'Prova gratuita', months: 1, note: "Disdici qualche giorno prima: alla fine della prova parte l'addebito." },
-    { k: 'isee', name: 'ISEE', months: 12, date: function () { return new Date().getFullYear() + '-12-31'; }, note: 'Vale fino al 31 dicembre. Si rifà ogni anno con la DSU, online sul sito INPS o in un CAF.' },
-    { k: '730', name: '730 / dichiarazione dei redditi', months: 12, date: function () { var y = new Date().getFullYear(); var d = new Date(); var t = new Date(y, 8, 30); if (t < new Date(d.getFullYear(), d.getMonth(), d.getDate())) y += 1; return y + '-09-30'; }, note: 'La scadenza ordinaria del 730 è il 30 settembre. Controlla il modello precompilato.' },
+    { k: 'isee', name: 'ISEE', months: 12, rep: 12, date: function () { return new Date().getFullYear() + '-12-31'; }, note: 'Vale fino al 31 dicembre. Si rifà ogni anno con la DSU, online sul sito INPS o in un CAF.' },
+    { k: '730', name: '730 / dichiarazione dei redditi', months: 12, rep: 12, date: function () { var y = new Date().getFullYear(); var d = new Date(); var t = new Date(y, 8, 30); if (t < new Date(d.getFullYear(), d.getMonth(), d.getDate())) y += 1; return y + '-09-30'; }, note: 'La scadenza ordinaria del 730 è il 30 settembre. Controlla il modello precompilato.' },
     { k: 'ts', name: 'Tessera sanitaria', months: 72, note: "Di norma arriva per posta prima della scadenza. Se non arriva, chiedi alla tua ASL." },
     { k: 'altro', name: '', months: 12, note: '' }
   ];
@@ -316,6 +330,18 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
     return iso(t);
   }
   function daysLeft(s) { return Math.round((parse(s) - today()) / 864e5); }
+  function nextOcc(it) {
+    var r = it.rep || 0;
+    if (!r) return it.date;
+    var t = iso(today()), k = 0, cur = it.date;
+    while (cur < t && k < 2000) { k++; cur = addMonths(it.date, k * r); }
+    return cur;
+  }
+  function repLabel(r) {
+    if (r === 1) return 'Ogni mese';
+    if (r % 12 === 0) return r === 12 ? 'Ogni anno' : 'Ogni ' + (r / 12) + ' anni';
+    return 'Ogni ' + r + ' mesi';
+  }
   function fmtLong(s) { var d = parse(s); return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear(); }
   function fmtShort(d) { return d.getDate() + ' ' + MESI[d.getMonth()].toLowerCase(); }
   function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
@@ -342,10 +368,10 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
     var y = t.getFullYear();
     return [
       { id: uid(), name: 'Prova gratuita streaming', date: at(6), months: 1, note: c('prova').note, example: true },
-      { id: uid(), name: 'Revisione auto', date: at(23), months: 24, note: c('rev').note, example: true },
-      { id: uid(), name: 'Bollo auto', date: at(34), months: 12, note: c('bollo').note, example: true },
-      { id: uid(), name: 'Abbonamento cloud', date: at(52), months: 12, note: c('abb').note, example: true },
-      { id: uid(), name: 'ISEE', date: y + '-12-31', months: 12, note: c('isee').note, example: true },
+      { id: uid(), name: 'Revisione auto', date: at(23), months: 24, rep: 24, note: c('rev').note, example: true },
+      { id: uid(), name: 'Bollo auto', date: at(34), months: 12, rep: 12, note: c('bollo').note, example: true },
+      { id: uid(), name: 'Abbonamento musica', date: at(12), months: 1, rep: 1, note: c('abbm').note, example: true },
+      { id: uid(), name: 'ISEE', date: y + '-12-31', months: 12, rep: 12, note: c('isee').note, example: true },
       { id: uid(), name: "Carta d'identità elettronica", date: at(140), months: 120, note: c('ci').note, example: true },
       { id: uid(), name: 'Passaporto', date: at(410), months: 120, note: c('pass').note, example: true },
       { id: uid(), name: 'Garanzia lavatrice', date: at(-9), months: 24, note: c('gar').note, example: true }
@@ -375,9 +401,9 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
     var t = today();
     $('oggi').textContent = t.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
 
-    var sorted = items.slice().sort(function (a, b) { return parse(a.date) - parse(b.date); });
+    var sorted = items.slice().sort(function (a, b) { return parse(nextOcc(a)) - parse(nextOcc(b)); });
     var late = 0, soon = 0;
-    sorted.forEach(function (it) { var n = daysLeft(it.date); if (n < 0) late++; else if (n <= 30) soon++; });
+    sorted.forEach(function (it) { var n = daysLeft(nextOcc(it)); if (n < 0) late++; else if (n <= 30) soon++; });
     $('n-scadute').textContent = late;
     $('n-30').textContent = soon;
     $('n-tot').textContent = sorted.length;
@@ -388,7 +414,8 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
       list.innerHTML = '<li class="empty"><b>Nessuna scadenza</b>Tocca Aggiungi scadenza e scegli dall\'elenco: patente, revisione, abbonamenti e altro.</li>';
     } else {
       list.innerHTML = sorted.map(function (it) {
-        var n = daysLeft(it.date), d = parse(it.date);
+        var eff = nextOcc(it);
+        var n = daysLeft(eff), d = parse(eff);
         var checks = [60, 30, 7].map(function (k) { return addDays(d, -k); })
           .filter(function (x) { return x >= t; })
           .map(fmtShort);
@@ -398,12 +425,12 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
         return '<li class="item ' + cls(n) + '">' +
           '<div class="stub"><span class="d">' + String(d.getDate()).padStart(2, '0') + '</span><span class="m">' + MESI[d.getMonth()] + '</span><span class="y">' + d.getFullYear() + '</span></div>' +
           '<div class="body">' +
-            '<div class="top"><h3>' + esc(it.name) + (it.example ? '<span class="tag">Esempio</span>' : '') + '</h3><span class="chip">' + rel(n) + '</span></div>' +
+            '<div class="top"><h3>' + esc(it.name) + (it.example ? '<span class="tag">Esempio</span>' : '') + (it.rep ? '<span class="tag">' + repLabel(it.rep) + '</span>' : '') + '</h3><span class="chip">' + rel(n) + '</span></div>' +
             (it.note ? '<p class="note">' + esc(it.note) + '</p>' : '') +
             (checks.length ? '<p class="checks">Controlla il ' + checks.join(' · ') + '</p>' : '') +
             '<div class="acts">' +
               '<button type="button" class="btn small' + calHot + '" data-act="cal" data-id="' + it.id + '">' + calLabel + '</button>' +
-              '<button type="button" class="btn small" data-act="rinnova" data-id="' + it.id + '">Rinnovata (' + renewLabel(it.months || 12) + ')</button>' +
+              (it.rep ? '' : '<button type="button" class="btn small" data-act="rinnova" data-id="' + it.id + '">Rinnovata (' + renewLabel(it.months || 12) + ')</button>') +
               '<button type="button" class="btn small" data-act="elimina" data-id="' + it.id + '">' + (confirming ? 'Tocca ancora per eliminare' : 'Elimina') + '</button>' +
             '</div>' +
           '</div></li>';
@@ -422,7 +449,15 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
     $('mesi').value = c.months;
     $('nota').value = c.note;
     $('data').value = c.date ? c.date() : '';
+    $('rep').value = String(c.rep || 0);
+    syncRep();
   }
+  function syncRep() {
+    var r = $('rep').value !== '0';
+    $('f-mesi').hidden = r;
+    document.querySelector('label[for="data"]').textContent = r ? 'Prossima data' : 'Scade il';
+  }
+  $('rep').addEventListener('change', syncRep);
   tipo.addEventListener('change', fillFromType);
 
   function openForm(show) {
@@ -442,7 +477,7 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
     var name = $('nome').value.trim(), date = $('data').value;
     if (!name || !date) { say('Inserisci un nome e una data.'); return; }
     var m = parseInt($('mesi').value, 10);
-    var ni = { id: uid(), name: name, date: date, months: m > 0 ? m : 12, note: $('nota').value.trim() };
+    var ni = { id: uid(), name: name, date: date, months: m > 0 ? m : 12, rep: parseInt($('rep').value, 10) || 0, note: $('nota').value.trim() };
     items.push(ni);
     save();
     openForm(false);
@@ -495,21 +530,35 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
   function utcStamp(d) {
     return d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate()) + 'T' + pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + pad(d.getUTCSeconds()) + 'Z';
   }
+  function rrule(r, d) {
+    if (r % 12 === 0) return 'FREQ=YEARLY;INTERVAL=' + (r / 12);
+    var out = 'FREQ=MONTHLY;INTERVAL=' + r, day = d.getDate();
+    if (day > 28) {
+      var days = [];
+      for (var i = 28; i <= day; i++) days.push(i);
+      out += ';BYMONTHDAY=' + days.join(',') + ';BYSETPOS=-1';
+    }
+    return out;
+  }
+  function alarmDays(r) { return r === 0 ? [60, 30, 7, 0] : r === 1 ? [7, 0] : r < 12 ? [30, 7, 0] : [60, 30, 7, 0]; }
+  function trig(k) { return k === 0 ? 'PT9H' : k === 1 ? '-PT15H' : '-P' + (k - 1) + 'DT15H'; }
+  function alarmText(name, k) { return name + (k === 0 ? ' scade oggi' : k === 1 ? ' scade domani' : ' scade tra ' + plural(k, 'giorno', 'giorni')); }
   function buildIcs(list) {
     var now = new Date(), stamp = utcStamp(now);
     var L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Scadenzario//IT', 'CALSCALE:GREGORIAN', 'X-WR-CALNAME:Scadenzario'];
     list.forEach(function (it) {
-      var d = parse(it.date), next = iso(addDays(d, 1));
+      var r = it.rep || 0;
+      var startIso = r ? (it.cal0 || nextOcc(it)) : it.date;
+      var d = parse(startIso), next = iso(addDays(d, 1));
       L.push('BEGIN:VEVENT', 'UID:' + it.id + '@scadenzario', 'DTSTAMP:' + stamp, 'SEQUENCE:' + (it.rev || 0),
-        'DTSTART;VALUE=DATE:' + it.date.replace(/-/g, ''), 'DTEND;VALUE=DATE:' + next.replace(/-/g, ''),
+        'DTSTART;VALUE=DATE:' + startIso.replace(/-/g, ''), 'DTEND;VALUE=DATE:' + next.replace(/-/g, ''),
         'SUMMARY:' + icsEsc(it.name), 'TRANSP:TRANSPARENT');
+      if (r) L.push('RRULE:' + rrule(r, d));
       if (it.note) L.push('DESCRIPTION:' + icsEsc(it.note));
-      [[60, '-P59DT15H'], [30, '-P29DT15H'], [7, '-P6DT15H'], [0, 'PT9H']].forEach(function (a) {
-        var when = new Date(d.getFullYear(), d.getMonth(), d.getDate() - a[0], 9, 0);
-        if (when > now) {
-          L.push('BEGIN:VALARM', 'ACTION:DISPLAY',
-            'DESCRIPTION:' + icsEsc(a[0] === 0 ? it.name + ' scade oggi' : it.name + ' scade tra ' + plural(a[0], 'giorno', 'giorni')),
-            'TRIGGER:' + a[1], 'END:VALARM');
+      alarmDays(r).forEach(function (k) {
+        var when = new Date(d.getFullYear(), d.getMonth(), d.getDate() - k, 9, 0);
+        if (r || when > now) {
+          L.push('BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + icsEsc(alarmText(it.name, k)), 'TRIGGER:' + trig(k), 'END:VALARM');
         }
       });
       L.push('END:VEVENT');
@@ -519,6 +568,7 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
   }
   function exportCal(list) {
     try {
+      list.forEach(function (i) { if (i.rep && !i.cal0) i.cal0 = nextOcc(i); });
       var blob = new Blob([buildIcs(list)], { type: 'text/calendar;charset=utf-8' });
       var url = URL.createObjectURL(blob);
       var a = document.createElement('a');
@@ -546,8 +596,8 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
     } catch (e) { fail(); }
   }
   $('copia-elenco').addEventListener('click', function () {
-    var rows = items.slice().sort(function (a, b) { return parse(a.date) - parse(b.date); })
-      .map(function (i) { return i.name + ' - ' + fmtLong(i.date); });
+    var rows = items.slice().sort(function (a, b) { return parse(nextOcc(a)) - parse(nextOcc(b)); })
+      .map(function (i) { return i.name + ' - ' + fmtLong(nextOcc(i)); });
     copy(rows.length ? rows.join('\n') : 'Nessuna scadenza.');
   });
   $('copia-dati').addEventListener('click', function () { copy(JSON.stringify(items)); });
@@ -556,7 +606,7 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
       var arr = JSON.parse($('io').value);
       if (!Array.isArray(arr)) throw new Error('formato');
       var ok = arr.filter(function (i) { return i && typeof i.name === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(i.date); })
-        .map(function (i) { return { id: i.id || uid(), name: i.name, date: i.date, months: i.months > 0 ? i.months : 12, note: i.note || '', example: !!i.example, rev: i.rev || 0, exp: '' }; });
+        .map(function (i) { return { id: i.id || uid(), name: i.name, date: i.date, months: i.months > 0 ? i.months : 12, note: i.note || '', example: !!i.example, rev: i.rev || 0, rep: i.rep > 0 ? i.rep : 0, cal0: i.cal0 || '', exp: '' }; });
       if (!ok.length) throw new Error('vuoto');
       items = ok; save(); render();
       say('Ripristinate ' + plural(ok.length, 'scadenza', 'scadenze') + '.');
