@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Scadenzario">
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<title>Scadenzario</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: una colonna stretta; ogni scadenza è un tagliando con il blocco data a sinistra, ordinato per urgenza. */
+:root {
+  --font-display: 'Familjen Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+
+  --bg: #ECEFF3;
+  --surface: #F8F9FB;
+  --fg: #121B26;
+  --muted: #566274;
+  --line: #CBD2DC;
+  --accent: #1D43CC;
+  --on-accent: #FFFFFF;
+
+  --late-bg: #F5D6D2;   --late-fg: #8A1A12;
+  --soon-bg: #F8E0BF;   --soon-fg: #7A3F00;
+  --notice-bg: #EDE7B8; --notice-fg: #5C5200;
+  --ok-bg: #D3E8DB;     --ok-fg: #17603C;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E141B; --surface: #161E28; --fg: #E8EDF3; --muted: #92A0B2; --line: #2B3745;
+    --accent: #86A3FF; --on-accent: #0E141B;
+    --late-bg: #4A1F1B;   --late-fg: #FFB4AB;
+    --soon-bg: #4A3213;   --soon-fg: #FFC981;
+    --notice-bg: #3E3913; --notice-fg: #E8DB7A;
+    --ok-bg: #173A29;     --ok-fg: #86D8A9;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E141B; --surface: #161E28; --fg: #E8EDF3; --muted: #92A0B2; --line: #2B3745;
+  --accent: #86A3FF; --on-accent: #0E141B;
+  --late-bg: #4A1F1B;   --late-fg: #FFB4AB;
+  --soon-bg: #4A3213;   --soon-fg: #FFC981;
+  --notice-bg: #3E3913; --notice-fg: #E8DB7A;
+  --ok-bg: #173A29;     --ok-fg: #86D8A9;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  padding-block: 24px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+h1, h2, h3, p { margin: 0; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: 34px; line-height: 1.05; letter-spacing: -0.01em; text-wrap: balance; }
+.today { font-family: var(--font-mono); font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+header { display: flex; flex-direction: column; gap: 6px; }
+
+.strip { display: grid; grid-template-columns: repeat(3, 1fr); border-block: 1px solid var(--line); }
+.strip > div { padding: 12px 0 12px 14px; border-left: 1px solid var(--line); min-width: 0; }
+.strip > div:first-child { padding-left: 0; border-left: 0; }
+.strip b { display: block; font-family: var(--font-mono); font-weight: 500; font-size: 28px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.strip span { font-size: 12px; color: var(--muted); }
+.strip .hot b { color: var(--late-fg); }
+
+.btn {
+  font: inherit; font-size: 15px; font-weight: 600; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); color: var(--fg);
+  border-radius: 6px; padding: 10px 14px; min-height: 44px;
+}
+.btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.btn.small { min-height: 36px; padding: 6px 10px; font-size: 13px; font-weight: 500; }
+.btn:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+
+form { display: flex; flex-direction: column; gap: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field.wide { grid-column: 1 / -1; }
+label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+input, select, textarea {
+  font: inherit; font-size: 16px; color: var(--fg); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; width: 100%; min-width: 0;
+}
+textarea { resize: vertical; font-family: var(--font-mono); font-size: 13px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.sample { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.sample p { flex: 1 1 220px; min-width: 0; }
+
+ul.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.item { display: grid; grid-template-columns: 78px minmax(0, 1fr); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.stub { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; padding: 10px 4px; font-family: var(--font-mono); line-height: 1.15; border-right: 1px dashed var(--line); }
+.stub .d { font-size: 26px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.stub .m { font-size: 12px; letter-spacing: 0.1em; }
+.stub .y { font-size: 11px; opacity: 0.8; }
+.s-late .stub { background: var(--late-bg); color: var(--late-fg); }
+.s-soon .stub { background: var(--soon-bg); color: var(--soon-fg); }
+.s-notice .stub { background: var(--notice-bg); color: var(--notice-fg); }
+.s-ok .stub { background: var(--ok-bg); color: var(--ok-fg); }
+
+.body { padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
+h3 { font-family: var(--font-display); font-weight: 700; font-size: 18px; line-height: 1.2; min-width: 0; overflow-wrap: anywhere; }
+.tag { font-family: var(--font-body); font-size: 11px; font-weight: 600; color: var(--muted); border: 1px solid var(--line); border-radius: 3px; padding: 1px 5px; margin-left: 6px; vertical-align: 2px; text-transform: uppercase; letter-spacing: 0.06em; }
+.chip { font-family: var(--font-mono); font-size: 12px; font-weight: 500; white-space: nowrap; padding: 2px 8px; border-radius: 3px; }
+.s-late .chip { background: var(--late-bg); color: var(--late-fg); }
+.s-soon .chip { background: var(--soon-bg); color: var(--soon-fg); }
+.s-notice .chip { background: var(--notice-bg); color: var(--notice-fg); }
+.s-ok .chip { background: var(--ok-bg); color: var(--ok-fg); }
+.note { color: var(--muted); font-size: 14px; max-width: 65ch; }
+.checks { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.acts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+
+.empty { border: 1px dashed var(--line); border-radius: 8px; padding: 24px 16px; text-align: center; color: var(--muted); }
+.empty b { display: block; color: var(--fg); font-family: var(--font-display); font-size: 18px; margin-bottom: 4px; }
+
+details { border-top: 1px solid var(--line); padding-top: 14px; }
+summary { cursor: pointer; font-weight: 600; min-height: 32px; }
+details .inner { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+details p { color: var(--muted); font-size: 14px; max-width: 65ch; }
+#msg { font-size: 13px; min-height: 20px; color: var(--muted); }
+.foot { font-size: 12px; color: var(--muted); }
+ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; max-width: 65ch; }
+.link { font: inherit; font-size: 13px; color: var(--muted); background: none; border: 0; padding: 8px 0; min-height: 36px; text-decoration: underline; cursor: pointer; }
+.link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#cal-hint { margin-top: -10px; }
+#cal-hint:empty { display: none; }
+</style>
+
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <span class="today" id="oggi"></span>
+    <h1>Scadenzario</h1>
+  </header>
+
+  <section class="strip" aria-label="Riepilogo">
+    <div class="hot"><b id="n-scadute">0</b><span>scadute</span></div>
+    <div><b id="n-30">0</b><span>entro 30 giorni</span></div>
+    <div><b id="n-tot">0</b><span>in totale</span></div>
+  </section>
+
+  <div class="row">
+    <button type="button" class="btn primary" id="apri" aria-expanded="false" aria-controls="form">Aggiungi scadenza</button>
+    <button type="button" class="btn" id="calendario">Aggiungi al Calendario</button>
+  </div>
+  <p class="note" id="cal-hint"></p>
+
+  <form id="form" hidden>
+    <div class="grid">
+      <div class="field wide">
+        <label for="tipo">Tipo</label>
+        <select id="tipo"></select>
+      </div>
+      <div class="field wide">
+        <label for="nome">Nome</label>
+        <input id="nome" type="text" required maxlength="80" placeholder="Es. Passaporto di Marta">
+      </div>
+      <div class="field">
+        <label for="data">Scade il</label>
+        <input id="data" type="date" required>
+      </div>
+      <div class="field">
+        <label for="mesi">Dura (mesi)</label>
+        <input id="mesi" type="number" inputmode="numeric" min="1" max="240" value="12">
+      </div>
+      <div class="field wide">
+        <label for="nota">Cosa fare</label>
+        <input id="nota" type="text" maxlength="200" placeholder="Facoltativo">
+      </div>
+    </div>
+    <div class="row">
+      <button type="submit" class="btn primary">Salva</button>
+      <button type="button" class="btn" id="annulla">Annulla</button>
+    </div>
+  </form>
+
+  <div class="sample" id="sample" hidden>
+    <p>Le voci con l'etichetta Esempio sono dimostrative.</p>
+    <button type="button" class="btn small" id="togli-esempi">Rimuovi esempi</button>
+  </div>
+
+  <ul class="list" id="lista"></ul>
+
+  <details>
+    <summary>Copie e promemoria</summary>
+    <div class="inner">
+      <p>I dati stanno solo in questo browser. Per averne una copia, o per portarli su un altro telefono, copia il testo e incollalo dove vuoi. Gli avvisi arrivano dal Calendario: tocca Aggiungi al Calendario e apri il file scaricato.</p>
+      <div class="row">
+        <button type="button" class="btn small" id="copia-elenco">Copia elenco</button>
+        <button type="button" class="btn small" id="copia-dati">Copia dati</button>
+        <button type="button" class="btn small" id="ripristina">Ripristina da testo</button>
+      </div>
+      <textarea id="io" rows="5" aria-label="Testo per copia e ripristino" placeholder="Qui compare il testo da copiare. Per ripristinare, incolla i dati qui e tocca Ripristina da testo."></textarea>
+    </div>
+  </details>
+
+  <details id="home-guide" open>
+    <summary>Aggiungi alla schermata Home</summary>
+    <div class="inner">
+      <ol class="steps">
+        <li>Apri questa pagina in Safari.</li>
+        <li>Tocca il pulsante Condividi, il quadrato con la freccia verso l'alto.</li>
+        <li>Scorri l'elenco e tocca Aggiungi alla schermata Home.</li>
+        <li>Tocca Aggiungi in alto a destra. L'icona compare nella Home.</li>
+      </ol>
+      <p>Prima di farlo tocca Copia dati qui sopra. L'icona può avere uno spazio dati separato da Safari: se la trovi vuota, usa Ripristina da testo.</p>
+    </div>
+  </details>
+
+  <p id="msg" role="status" aria-live="polite"></p>
+  <p class="foot" id="foot"></p>
+  <p><button type="button" class="link" id="condividi">Condividi con un amico</button></p>
+</main>
+
+<script>
+(function () {
+  var KEY = 'scadenzario.v1';
+  var MESI = ['GEN','FEB','MAR','APR','MAG','GIU','LUG','AGO','SET','OTT','NOV','DIC'];
+  var storageOk = true;
+  var pendingDel = null;
+  var delTimer = null;
+
+  var CAT = [
+    { k: 'ci', name: "Carta d'identità elettronica", months: 120, note: "Si può rinnovare in Comune fino a 180 giorni prima. Prenota l'appuntamento sul portale dedicato." },
+    { k: 'pass', name: 'Passaporto', months: 120, note: 'Si rinnova in questura o negli uffici postali abilitati. Prenota online e controlla le regole del paese di viaggio.' },
+    { k: 'pat', name: 'Patente', months: 120, note: 'Il rinnovo richiede una visita medica. Fissala qualche settimana prima della scadenza.' },
+    { k: 'rev', name: 'Revisione auto', months: 24, note: 'Va fatta entro la fine del mese di scadenza. Prenota in officina autorizzata o alla motorizzazione.' },
+    { k: 'bollo', name: 'Bollo auto', months: 12, note: "Controlla importo e scadenza sul sito dell'ACI e paga online o in tabaccheria." },
+    { k: 'rca', name: 'Assicurazione auto', months: 12, note: 'Confronta qualche preventivo un mese prima della scadenza.' },
+    { k: 'gar', name: 'Garanzia', months: 24, note: 'Tieni scontrino o fattura. La garanzia legale dura 24 mesi; denuncia un difetto entro 2 mesi da quando lo scopri.' },
+    { k: 'abb', name: 'Abbonamento con rinnovo automatico', months: 12, note: 'Controlla la data di rinnovo e disdici prima se non ti serve più.' },
+    { k: 'prova', name: 'Prova gratuita', months: 1, note: "Disdici qualche giorno prima: alla fine della prova parte l'addebito." },
+    { k: 'isee', name: 'ISEE', months: 12, date: function () { return new Date().getFullYear() + '-12-31'; }, note: 'Vale fino al 31 dicembre. Si rifà ogni anno con la DSU, online sul sito INPS o in un CAF.' },
+    { k: '730', name: '730 / dichiarazione dei redditi', months: 12, date: function () { var y = new Date().getFullYear(); var d = new Date(); var t = new Date(y, 8, 30); if (t < new Date(d.getFullYear(), d.getMonth(), d.getDate())) y += 1; return y + '-09-30'; }, note: 'La scadenza ordinaria del 730 è il 30 settembre. Controlla il modello precompilato.' },
+    { k: 'ts', name: 'Tessera sanitaria', months: 72, note: "Di norma arriva per posta prima della scadenza. Se non arriva, chiedi alla tua ASL." },
+    { k: 'altro', name: '', months: 12, note: '' }
+  ];
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function today() { var n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); }
+  function parse(s) { var p = s.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); }
+  function iso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function addDays(d, n) { return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
+  function addMonths(s, n) {
+    var d = parse(s), day = d.getDate();
+    var t = new Date(d.getFullYear(), d.getMonth() + n, 1);
+    var last = new Date(t.getFullYear(), t.getMonth() + 1, 0).getDate();
+    t.setDate(Math.min(day, last));
+    return iso(t);
+  }
+  function daysLeft(s) { return Math.round((parse(s) - today()) / 864e5); }
+  function fmtLong(s) { var d = parse(s); return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear(); }
+  function fmtShort(d) { return d.getDate() + ' ' + MESI[d.getMonth()].toLowerCase(); }
+  function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
+
+  function rel(n) {
+    if (n === 0) return 'Oggi';
+    if (n === 1) return 'Domani';
+    if (n === -1) return 'Scaduta ieri';
+    if (n < 0) return 'Scaduta da ' + plural(-n, 'giorno', 'giorni');
+    if (n <= 60) return 'Tra ' + plural(n, 'giorno', 'giorni');
+    var m = Math.round(n / 30.4);
+    if (m < 18) return 'Tra ' + plural(m, 'mese', 'mesi');
+    var y = Math.floor(m / 12), r = m % 12;
+    return 'Tra ' + plural(y, 'anno', 'anni') + (r ? ' e ' + plural(r, 'mese', 'mesi') : '');
+  }
+  function cls(n) { return n < 0 ? 's-late' : n <= 30 ? 's-soon' : n <= 60 ? 's-notice' : 's-ok'; }
+  function renewLabel(m) { return m % 12 === 0 ? '+' + plural(m / 12, 'anno', 'anni') : '+' + plural(m, 'mese', 'mesi'); }
+  function uid() { return Math.random().toString(36).slice(2, 9); }
+
+  function seed() {
+    var t = today();
+    function at(n) { return iso(addDays(t, n)); }
+    function c(k) { return CAT.filter(function (x) { return x.k === k; })[0]; }
+    var y = t.getFullYear();
+    return [
+      { id: uid(), name: 'Prova gratuita streaming', date: at(6), months: 1, note: c('prova').note, example: true },
+      { id: uid(), name: 'Revisione auto', date: at(23), months: 24, note: c('rev').note, example: true },
+      { id: uid(), name: 'Bollo auto', date: at(34), months: 12, note: c('bollo').note, example: true },
+      { id: uid(), name: 'Abbonamento cloud', date: at(52), months: 12, note: c('abb').note, example: true },
+      { id: uid(), name: 'ISEE', date: y + '-12-31', months: 12, note: c('isee').note, example: true },
+      { id: uid(), name: "Carta d'identità elettronica", date: at(140), months: 120, note: c('ci').note, example: true },
+      { id: uid(), name: 'Passaporto', date: at(410), months: 120, note: c('pass').note, example: true },
+      { id: uid(), name: 'Garanzia lavatrice', date: at(-9), months: 24, note: c('gar').note, example: true }
+    ];
+  }
+
+  var items = [];
+  function load() {
+    var raw = null;
+    try { raw = localStorage.getItem(KEY); } catch (e) { storageOk = false; }
+    if (raw) {
+      try {
+        var o = JSON.parse(raw);
+        if (o && Array.isArray(o.items)) { items = o.items; return; }
+      } catch (e) {}
+    }
+    items = seed();
+    save();
+  }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify({ v: 1, items: items })); }
+    catch (e) { storageOk = false; }
+  }
+  function say(t) { $('msg').textContent = t; }
+
+  function render() {
+    var t = today();
+    $('oggi').textContent = t.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
+
+    var sorted = items.slice().sort(function (a, b) { return parse(a.date) - parse(b.date); });
+    var late = 0, soon = 0;
+    sorted.forEach(function (it) { var n = daysLeft(it.date); if (n < 0) late++; else if (n <= 30) soon++; });
+    $('n-scadute').textContent = late;
+    $('n-30').textContent = soon;
+    $('n-tot').textContent = sorted.length;
+    $('sample').hidden = !items.some(function (i) { return i.example; });
+    var mine = items.filter(function (i) { return !i.example; });
+    var dirty = mine.filter(function (i) { return i.exp !== i.date; }).length;
+    $('cal-hint').textContent = !mine.length ? '' : dirty
+      ? plural(dirty, 'scadenza nuova o cambiata', 'scadenze nuove o cambiate') + " dall'ultimo invio al Calendario. Tocca Aggiungi al Calendario per aggiornarlo."
+      : 'Il Calendario è aggiornato con tutte le tue scadenze.';
+
+    var list = $('lista');
+    if (!sorted.length) {
+      list.innerHTML = '<li class="empty"><b>Nessuna scadenza</b>Tocca Aggiungi scadenza e scegli dall\'elenco: patente, revisione, abbonamenti e altro.</li>';
+    } else {
+      list.innerHTML = sorted.map(function (it) {
+        var n = daysLeft(it.date), d = parse(it.date);
+        var checks = [60, 30, 7].map(function (k) { return addDays(d, -k); })
+          .filter(function (x) { return x >= t; })
+          .map(fmtShort);
+        var confirming = pendingDel === it.id;
+        return '<li class="item ' + cls(n) + '">' +
+          '<div class="stub"><span class="d">' + String(d.getDate()).padStart(2, '0') + '</span><span class="m">' + MESI[d.getMonth()] + '</span><span class="y">' + d.getFullYear() + '</span></div>' +
+          '<div class="body">' +
+            '<div class="top"><h3>' + esc(it.name) + (it.example ? '<span class="tag">Esempio</span>' : '') + '</h3><span class="chip">' + rel(n) + '</span></div>' +
+            (it.note ? '<p class="note">' + esc(it.note) + '</p>' : '') +
+            (checks.length ? '<p class="checks">Controlla il ' + checks.join(' · ') + '</p>' : '') +
+            '<div class="acts">' +
+              '<button type="button" class="btn small" data-act="rinnova" data-id="' + it.id + '">Rinnovata (' + renewLabel(it.months || 12) + ')</button>' +
+              '<button type="button" class="btn small" data-act="elimina" data-id="' + it.id + '">' + (confirming ? 'Tocca ancora per eliminare' : 'Elimina') + '</button>' +
+            '</div>' +
+          '</div></li>';
+      }).join('');
+    }
+    $('foot').textContent = storageOk ? '' : 'In questa finestra il salvataggio non è disponibile: le modifiche restano finché non chiudi la pagina.';
+  }
+
+  /* form */
+  var tipo = $('tipo');
+  tipo.innerHTML = CAT.map(function (c) { return '<option value="' + c.k + '">' + (c.name || 'Altro (scrivo io)') + '</option>'; }).join('');
+  function fillFromType() {
+    var c = CAT.filter(function (x) { return x.k === tipo.value; })[0];
+    if (!c) return;
+    $('nome').value = c.name;
+    $('mesi').value = c.months;
+    $('nota').value = c.note;
+    $('data').value = c.date ? c.date() : '';
+  }
+  tipo.addEventListener('change', fillFromType);
+
+  function openForm(show) {
+    $('form').hidden = !show;
+    $('apri').setAttribute('aria-expanded', show ? 'true' : 'false');
+    if (show) { fillFromType(); $('nome').focus(); }
+  }
+  $('apri').addEventListener('click', function () { openForm($('form').hidden); });
+  $('annulla').addEventListener('click', function () { openForm(false); });
+
+  $('form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var name = $('nome').value.trim(), date = $('data').value;
+    if (!name || !date) { say('Inserisci un nome e una data.'); return; }
+    var m = parseInt($('mesi').value, 10);
+    items.push({ id: uid(), name: name, date: date, months: m > 0 ? m : 12, note: $('nota').value.trim() });
+    save();
+    openForm(false);
+    render();
+    say('Scadenza aggiunta.');
+  });
+
+  /* azioni sulla lista */
+  $('lista').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-act]');
+    if (!b) return;
+    var id = b.getAttribute('data-id');
+    var it = items.filter(function (x) { return x.id === id; })[0];
+    if (!it) return;
+    if (b.getAttribute('data-act') === 'rinnova') {
+      var base = daysLeft(it.date) < 0 ? iso(today()) : it.date;
+      it.date = addMonths(base, it.months || 12);
+      it.rev = (it.rev || 0) + 1;
+      save(); render();
+      say(it.name + ': nuova scadenza il ' + fmtLong(it.date) + '.');
+    } else {
+      if (pendingDel === id) {
+        items = items.filter(function (x) { return x.id !== id; });
+        pendingDel = null; clearTimeout(delTimer);
+        save(); render(); say('Scadenza eliminata.');
+      } else {
+        pendingDel = id; clearTimeout(delTimer);
+        delTimer = setTimeout(function () { pendingDel = null; render(); }, 4000);
+        render();
+      }
+    }
+  });
+
+  $('togli-esempi').addEventListener('click', function () {
+    items = items.filter(function (i) { return !i.example; });
+    save(); render(); say('Esempi rimossi.');
+  });
+
+  /* calendario */
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function icsEsc(t) { return String(t).replace(/\\/g, '\\\\').replace(/;/g, '\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n'); }
+  function fold(line) {
+    var out = [], t = line;
+    while (t.length > 72) { out.push(t.slice(0, 72)); t = ' ' + t.slice(72); }
+    out.push(t);
+    return out.join('\r\n');
+  }
+  function utcStamp(d) {
+    return d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate()) + 'T' + pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + pad(d.getUTCSeconds()) + 'Z';
+  }
+  function buildIcs(list) {
+    var now = new Date(), stamp = utcStamp(now);
+    var L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Scadenzario//IT', 'CALSCALE:GREGORIAN', 'X-WR-CALNAME:Scadenzario'];
+    list.forEach(function (it) {
+      var d = parse(it.date), next = iso(addDays(d, 1));
+      L.push('BEGIN:VEVENT', 'UID:' + it.id + '@scadenzario', 'DTSTAMP:' + stamp, 'SEQUENCE:' + (it.rev || 0),
+        'DTSTART;VALUE=DATE:' + it.date.replace(/-/g, ''), 'DTEND;VALUE=DATE:' + next.replace(/-/g, ''),
+        'SUMMARY:' + icsEsc(it.name), 'TRANSP:TRANSPARENT');
+      if (it.note) L.push('DESCRIPTION:' + icsEsc(it.note));
+      [[60, '-P59DT15H'], [30, '-P29DT15H'], [7, '-P6DT15H'], [0, 'PT9H']].forEach(function (a) {
+        var when = new Date(d.getFullYear(), d.getMonth(), d.getDate() - a[0], 9, 0);
+        if (when > now) {
+          L.push('BEGIN:VALARM', 'ACTION:DISPLAY',
+            'DESCRIPTION:' + icsEsc(a[0] === 0 ? it.name + ' scade oggi' : it.name + ' scade tra ' + plural(a[0], 'giorno', 'giorni')),
+            'TRIGGER:' + a[1], 'END:VALARM');
+        }
+      });
+      L.push('END:VEVENT');
+    });
+    L.push('END:VCALENDAR');
+    return L.map(fold).join('\r\n') + '\r\n';
+  }
+  $('calendario').addEventListener('click', function () {
+    var mine = items.filter(function (i) { return !i.example; });
+    if (!mine.length) { say('Aggiungi prima una tua scadenza: gli esempi non vanno nel Calendario.'); return; }
+    try {
+      var blob = new Blob([buildIcs(mine)], { type: 'text/calendar;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = 'scadenzario.ics';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      mine.forEach(function (i) { i.exp = i.date; });
+      save(); render();
+      say('File pronto. Aprilo e scegli Aggiungi tutto, meglio in un calendario chiamato Scadenzario.');
+    } catch (e) {
+      say('Non riesco a creare il file in questa finestra. Apri la pagina in Safari.');
+    }
+  });
+
+  /* copie */
+  function copy(text) {
+    var ta = $('io');
+    ta.value = text;
+    ta.focus(); ta.select();
+    var done = function () { say('Copiato.'); };
+    var fail = function () { say('Seleziona il testo nel riquadro e copialo a mano.'); };
+    try {
+      navigator.clipboard.writeText(text).then(done, fail);
+    } catch (e) { fail(); }
+  }
+  $('copia-elenco').addEventListener('click', function () {
+    var rows = items.slice().sort(function (a, b) { return parse(a.date) - parse(b.date); })
+      .map(function (i) { return i.name + ' - ' + fmtLong(i.date); });
+    copy(rows.length ? rows.join('\n') : 'Nessuna scadenza.');
+  });
+  $('copia-dati').addEventListener('click', function () { copy(JSON.stringify(items)); });
+  $('ripristina').addEventListener('click', function () {
+    try {
+      var arr = JSON.parse($('io').value);
+      if (!Array.isArray(arr)) throw new Error('formato');
+      var ok = arr.filter(function (i) { return i && typeof i.name === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(i.date); })
+        .map(function (i) { return { id: i.id || uid(), name: i.name, date: i.date, months: i.months > 0 ? i.months : 12, note: i.note || '', example: !!i.example, rev: i.rev || 0, exp: '' }; });
+      if (!ok.length) throw new Error('vuoto');
+      items = ok; save(); render();
+      say('Ripristinate ' + plural(ok.length, 'scadenza', 'scadenze') + '.');
+    } catch (e) {
+      say('Il testo non è nel formato giusto. Usa quello ottenuto con Copia dati.');
+    }
+  });
+
+  /* condividi e guida Home */
+  $('condividi').addEventListener('click', function () {
+    var url = location.origin + location.pathname;
+    var data = { title: 'Scadenzario', text: 'Uno scadenzario per documenti, auto e abbonamenti. I dati restano sul tuo telefono.', url: url };
+    if (navigator.share) {
+      navigator.share(data).catch(function () {});
+      return;
+    }
+    try {
+      navigator.clipboard.writeText(url).then(function () { say('Link copiato.'); }, function () { say('Copia questo indirizzo: ' + url); });
+    } catch (e) { say('Copia questo indirizzo: ' + url); }
+  });
+  var installed = (window.navigator && window.navigator.standalone) || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+  if (installed) $('home-guide').hidden = true;
+
+  load();
+  render();
+})();
+</script>
+</body>
+</html>
