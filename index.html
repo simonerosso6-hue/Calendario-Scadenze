@@ -6,6 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Scadenzario">
+<meta name="app-version" content="2">
 <style>
 :root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 body{margin:0}
@@ -33,6 +34,7 @@ img{max-width:100%}
   --soon-bg: #F8E0BF;   --soon-fg: #7A3F00;
   --notice-bg: #EDE7B8; --notice-fg: #5C5200;
   --ok-bg: #D3E8DB;     --ok-fg: #17603C;
+  --sheet-bg: rgba(248, 249, 251, 0.84);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -42,6 +44,7 @@ img{max-width:100%}
     --soon-bg: #4A3213;   --soon-fg: #FFC981;
     --notice-bg: #3E3913; --notice-fg: #E8DB7A;
     --ok-bg: #173A29;     --ok-fg: #86D8A9;
+    --sheet-bg: rgba(28, 38, 50, 0.84);
     color-scheme: dark;
   }
 }
@@ -52,6 +55,7 @@ img{max-width:100%}
   --soon-bg: #4A3213;   --soon-fg: #FFC981;
   --notice-bg: #3E3913; --notice-fg: #E8DB7A;
   --ok-bg: #173A29;     --ok-fg: #86D8A9;
+  --sheet-bg: rgba(28, 38, 50, 0.84);
   color-scheme: dark;
 }
 
@@ -141,12 +145,68 @@ details p { color: var(--muted); font-size: 14px; max-width: 65ch; }
 ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; max-width: 65ch; }
 .link { font: inherit; font-size: 13px; color: var(--muted); background: none; border: 0; padding: 8px 0; min-height: 36px; text-decoration: underline; cursor: pointer; }
 .link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.links { display: flex; gap: 18px; flex-wrap: wrap; }
+.btn.hot { border-color: var(--accent); color: var(--accent); }
+
+#sheets {
+  position: fixed; z-index: 20;
+  top: calc(env(safe-area-inset-top, 0px) + 8px);
+  left: max(8px, env(safe-area-inset-left, 0px));
+  right: max(8px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  pointer-events: none;
+}
+.sheet {
+  pointer-events: auto; width: 100%; max-width: 440px;
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 14px 16px;
+  background: var(--sheet-bg);
+  -webkit-backdrop-filter: blur(22px) saturate(1.6);
+  backdrop-filter: blur(22px) saturate(1.6);
+  border: 1px solid var(--line); border-radius: 18px;
+  box-shadow: 0 10px 34px rgba(10, 20, 40, 0.22);
+}
+.sheet:not([hidden]) { animation: drop 0.28s ease-out; }
+@keyframes drop { from { transform: translateY(-14px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .sheet:not([hidden]) { animation: none; } }
+.sheet-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.sheet h2 { font-family: var(--font-display); font-weight: 700; font-size: 17px; line-height: 1.2; }
+.sheet p { font-size: 13px; color: var(--muted); }
+.sheet ol.steps { font-size: 14px; }
+.sheet-x { background: none; border: 0; color: var(--muted); width: 36px; height: 36px; margin: -6px -8px -6px 0; display: grid; place-items: center; cursor: pointer; border-radius: 50%; flex: none; }
+.sheet-x:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ico { vertical-align: -4px; margin: 0 1px; }
 #cal-hint { margin-top: -10px; }
 #cal-hint:empty { display: none; }
 </style>
 
 </head>
 <body>
+<div id="sheets">
+  <section class="sheet" id="home-sheet" role="dialog" aria-labelledby="home-title" hidden>
+    <div class="sheet-head">
+      <h2 id="home-title">Aggiungi Scadenzario alla Home</h2>
+      <button type="button" class="sheet-x" id="home-close" aria-label="Chiudi">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg>
+      </button>
+    </div>
+    <ol class="steps">
+      <li>Tocca <svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg> <b>Condividi</b> nella barra di Safari. In alcune versioni è dentro il menu dei tre puntini.</li>
+      <li>Scorri e tocca <b>Aggiungi alla schermata Home</b>.</li>
+      <li>Tocca <b>Aggiungi</b>.</li>
+    </ol>
+    <p>Prima tocca Copia dati in fondo alla pagina: l'icona può avere uno spazio dati separato da Safari.</p>
+  </section>
+  <section class="sheet" id="update-sheet" role="status" hidden>
+    <div class="sheet-head"><h2>Nuova versione disponibile</h2></div>
+    <p>Le tue scadenze restano al loro posto.</p>
+    <div class="row">
+      <button type="button" class="btn primary small" id="aggiorna">Aggiorna</button>
+      <button type="button" class="btn small" id="piu-tardi">Più tardi</button>
+    </div>
+  </section>
+</div>
+
 <main class="wrap">
   <header>
     <span class="today" id="oggi"></span>
@@ -161,9 +221,7 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
 
   <div class="row">
     <button type="button" class="btn primary" id="apri" aria-expanded="false" aria-controls="form">Aggiungi scadenza</button>
-    <button type="button" class="btn" id="calendario">Aggiungi al Calendario</button>
   </div>
-  <p class="note" id="cal-hint"></p>
 
   <form id="form" hidden>
     <div class="grid">
@@ -189,7 +247,8 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
       </div>
     </div>
     <div class="row">
-      <button type="submit" class="btn primary">Salva</button>
+      <button type="submit" class="btn primary" id="salva">Salva</button>
+      <button type="submit" class="btn" id="salva-cal">Salva e aggiungi al Calendario</button>
       <button type="button" class="btn" id="annulla">Annulla</button>
     </div>
   </form>
@@ -204,7 +263,7 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
   <details>
     <summary>Copie e promemoria</summary>
     <div class="inner">
-      <p>I dati stanno solo in questo browser. Per averne una copia, o per portarli su un altro telefono, copia il testo e incollalo dove vuoi. Gli avvisi arrivano dal Calendario: tocca Aggiungi al Calendario e apri il file scaricato.</p>
+      <p>I dati stanno solo in questo browser. Per averne una copia, o per portarli su un altro telefono, copia il testo e incollalo dove vuoi. Gli avvisi arrivano dal Calendario: usa il pulsante Aggiungi al Calendario su ogni scadenza.</p>
       <div class="row">
         <button type="button" class="btn small" id="copia-elenco">Copia elenco</button>
         <button type="button" class="btn small" id="copia-dati">Copia dati</button>
@@ -214,22 +273,9 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
     </div>
   </details>
 
-  <details id="home-guide" open>
-    <summary>Aggiungi alla schermata Home</summary>
-    <div class="inner">
-      <ol class="steps">
-        <li>Apri questa pagina in Safari.</li>
-        <li>Tocca il pulsante Condividi, il quadrato con la freccia verso l'alto.</li>
-        <li>Scorri l'elenco e tocca Aggiungi alla schermata Home.</li>
-        <li>Tocca Aggiungi in alto a destra. L'icona compare nella Home.</li>
-      </ol>
-      <p>Prima di farlo tocca Copia dati qui sopra. L'icona può avere uno spazio dati separato da Safari: se la trovi vuota, usa Ripristina da testo.</p>
-    </div>
-  </details>
-
   <p id="msg" role="status" aria-live="polite"></p>
   <p class="foot" id="foot"></p>
-  <p><button type="button" class="link" id="condividi">Condividi con un amico</button></p>
+  <p class="links"><button type="button" class="link" id="home-link">Aggiungi alla Home</button><button type="button" class="link" id="condividi">Condividi con un amico</button></p>
 </main>
 
 <script>
@@ -336,11 +382,6 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
     $('n-30').textContent = soon;
     $('n-tot').textContent = sorted.length;
     $('sample').hidden = !items.some(function (i) { return i.example; });
-    var mine = items.filter(function (i) { return !i.example; });
-    var dirty = mine.filter(function (i) { return i.exp !== i.date; }).length;
-    $('cal-hint').textContent = !mine.length ? '' : dirty
-      ? plural(dirty, 'scadenza nuova o cambiata', 'scadenze nuove o cambiate') + " dall'ultimo invio al Calendario. Tocca Aggiungi al Calendario per aggiornarlo."
-      : 'Il Calendario è aggiornato con tutte le tue scadenze.';
 
     var list = $('lista');
     if (!sorted.length) {
@@ -352,6 +393,8 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
           .filter(function (x) { return x >= t; })
           .map(fmtShort);
         var confirming = pendingDel === it.id;
+        var calLabel = !it.exp ? 'Aggiungi al Calendario' : it.exp !== it.date ? 'Aggiorna nel Calendario' : 'Già nel Calendario';
+        var calHot = it.exp && it.exp !== it.date ? ' hot' : '';
         return '<li class="item ' + cls(n) + '">' +
           '<div class="stub"><span class="d">' + String(d.getDate()).padStart(2, '0') + '</span><span class="m">' + MESI[d.getMonth()] + '</span><span class="y">' + d.getFullYear() + '</span></div>' +
           '<div class="body">' +
@@ -359,6 +402,7 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
             (it.note ? '<p class="note">' + esc(it.note) + '</p>' : '') +
             (checks.length ? '<p class="checks">Controlla il ' + checks.join(' · ') + '</p>' : '') +
             '<div class="acts">' +
+              '<button type="button" class="btn small' + calHot + '" data-act="cal" data-id="' + it.id + '">' + calLabel + '</button>' +
               '<button type="button" class="btn small" data-act="rinnova" data-id="' + it.id + '">Rinnovata (' + renewLabel(it.months || 12) + ')</button>' +
               '<button type="button" class="btn small" data-act="elimina" data-id="' + it.id + '">' + (confirming ? 'Tocca ancora per eliminare' : 'Elimina') + '</button>' +
             '</div>' +
@@ -389,16 +433,21 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
   $('apri').addEventListener('click', function () { openForm($('form').hidden); });
   $('annulla').addEventListener('click', function () { openForm(false); });
 
+  var wantCal = false;
+  $('salva').addEventListener('click', function () { wantCal = false; });
+  $('salva-cal').addEventListener('click', function () { wantCal = true; });
   $('form').addEventListener('submit', function (e) {
     e.preventDefault();
+    var cal = wantCal; wantCal = false;
     var name = $('nome').value.trim(), date = $('data').value;
     if (!name || !date) { say('Inserisci un nome e una data.'); return; }
     var m = parseInt($('mesi').value, 10);
-    items.push({ id: uid(), name: name, date: date, months: m > 0 ? m : 12, note: $('nota').value.trim() });
+    var ni = { id: uid(), name: name, date: date, months: m > 0 ? m : 12, note: $('nota').value.trim() };
+    items.push(ni);
     save();
     openForm(false);
     render();
-    say('Scadenza aggiunta.');
+    if (cal) exportCal([ni]); else say('Scadenza aggiunta.');
   });
 
   /* azioni sulla lista */
@@ -408,7 +457,9 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
     var id = b.getAttribute('data-id');
     var it = items.filter(function (x) { return x.id === id; })[0];
     if (!it) return;
-    if (b.getAttribute('data-act') === 'rinnova') {
+    var act = b.getAttribute('data-act');
+    if (act === 'cal') { exportCal([it]); return; }
+    if (act === 'rinnova') {
       var base = daysLeft(it.date) < 0 ? iso(today()) : it.date;
       it.date = addMonths(base, it.months || 12);
       it.rev = (it.rev || 0) + 1;
@@ -466,23 +517,22 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
     L.push('END:VCALENDAR');
     return L.map(fold).join('\r\n') + '\r\n';
   }
-  $('calendario').addEventListener('click', function () {
-    var mine = items.filter(function (i) { return !i.example; });
-    if (!mine.length) { say('Aggiungi prima una tua scadenza: gli esempi non vanno nel Calendario.'); return; }
+  function exportCal(list) {
     try {
-      var blob = new Blob([buildIcs(mine)], { type: 'text/calendar;charset=utf-8' });
+      var blob = new Blob([buildIcs(list)], { type: 'text/calendar;charset=utf-8' });
       var url = URL.createObjectURL(blob);
       var a = document.createElement('a');
-      a.href = url; a.download = 'scadenzario.ics';
+      var slug = list.length === 1 ? list[0].name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') : 'scadenzario';
+      a.href = url; a.download = (slug || 'scadenza') + '.ics';
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
-      mine.forEach(function (i) { i.exp = i.date; });
+      list.forEach(function (i) { i.exp = i.date; });
       save(); render();
-      say('File pronto. Aprilo e scegli Aggiungi tutto, meglio in un calendario chiamato Scadenzario.');
+      say('File pronto. Aprilo e tocca Aggiungi: meglio in un calendario chiamato Scadenzario.');
     } catch (e) {
       say('Non riesco a creare il file in questa finestra. Apri la pagina in Safari.');
     }
-  });
+  }
 
   /* copie */
   function copy(text) {
@@ -515,7 +565,7 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
     }
   });
 
-  /* condividi e guida Home */
+  /* condividi, guida Home, aggiornamenti */
   $('condividi').addEventListener('click', function () {
     var url = location.origin + location.pathname;
     var data = { title: 'Scadenzario', text: 'Uno scadenzario per documenti, auto e abbonamenti. I dati restano sul tuo telefono.', url: url };
@@ -527,8 +577,40 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
       navigator.clipboard.writeText(url).then(function () { say('Link copiato.'); }, function () { say('Copia questo indirizzo: ' + url); });
     } catch (e) { say('Copia questo indirizzo: ' + url); }
   });
+
+  function showSheet(id, show) { $(id).hidden = !show; }
+  var HOME_KEY = 'scadenzario.home.chiusa';
+  function homeClosed() { try { return localStorage.getItem(HOME_KEY) === '1'; } catch (e) { return false; } }
   var installed = (window.navigator && window.navigator.standalone) || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
-  if (installed) $('home-guide').hidden = true;
+  var isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (installed) $('home-link').hidden = true;
+  $('home-link').addEventListener('click', function () { showSheet('home-sheet', true); });
+  $('home-close').addEventListener('click', function () {
+    showSheet('home-sheet', false);
+    try { localStorage.setItem(HOME_KEY, '1'); } catch (e) {}
+  });
+  if (isIos && !installed && !homeClosed()) setTimeout(function () { showSheet('home-sheet', true); }, 700);
+
+  var localVer = (document.querySelector('meta[name="app-version"]') || {}).content || '';
+  var lastCheck = 0;
+  function checkUpdate() {
+    if (!localVer || Date.now() - lastCheck < 600000) return;
+    lastCheck = Date.now();
+    fetch(location.pathname, { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.text() : ''; })
+      .then(function (t) {
+        var m = t.match(/<meta name="app-version" content="([^"]+)"/);
+        if (m && m[1] !== localVer) showSheet('update-sheet', true);
+      })
+      .catch(function () {});
+  }
+  $('aggiorna').addEventListener('click', function () {
+    var go = function () { location.reload(); };
+    fetch(location.pathname, { cache: 'reload' }).then(go, go);
+  });
+  $('piu-tardi').addEventListener('click', function () { showSheet('update-sheet', false); });
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') checkUpdate(); });
+  setTimeout(checkUpdate, 1500);
 
   load();
   render();
