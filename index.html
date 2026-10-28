@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Scadenzario">
-<meta name="app-version" content="3">
+<meta name="app-version" content="4">
 <style>
 :root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 body{margin:0}
@@ -358,6 +358,9 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
     return 'Tra ' + plural(y, 'anno', 'anni') + (r ? ' e ' + plural(r, 'mese', 'mesi') : '');
   }
   function cls(n) { return n < 0 ? 's-late' : n <= 30 ? 's-soon' : n <= 60 ? 's-notice' : 's-ok'; }
+  function actBtn(act, id, label, cls) {
+    return '<button type="button" class="btn small' + (cls || '') + '" data-act="' + act + '" data-id="' + id + '">' + label + '</button>';
+  }
   function renewLabel(m) { return m % 12 === 0 ? '+' + plural(m / 12, 'anno', 'anni') : '+' + plural(m, 'mese', 'mesi'); }
   function uid() { return Math.random().toString(36).slice(2, 9); }
 
@@ -431,7 +434,11 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
             '<div class="acts">' +
               '<button type="button" class="btn small' + calHot + '" data-act="cal" data-id="' + it.id + '">' + calLabel + '</button>' +
               (it.rep ? '' : '<button type="button" class="btn small" data-act="rinnova" data-id="' + it.id + '">Rinnovata (' + renewLabel(it.months || 12) + ')</button>') +
-              '<button type="button" class="btn small" data-act="elimina" data-id="' + it.id + '">' + (confirming ? 'Tocca ancora per eliminare' : 'Elimina') + '</button>' +
+              (confirming
+                ? (it.exp
+                    ? actBtn('elimina-cal', it.id, 'Elimina e togli dal Calendario', ' hot') + actBtn('elimina-solo', it.id, 'Elimina solo qui') + actBtn('annulla-del', it.id, 'Annulla')
+                    : actBtn('elimina-solo', it.id, 'Tocca ancora per eliminare'))
+                : actBtn('elimina', it.id, 'Elimina')) +
             '</div>' +
           '</div></li>';
       }).join('');
@@ -500,16 +507,18 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
       it.rev = (it.rev || 0) + 1;
       save(); render();
       say(it.name + ': nuova scadenza il ' + fmtLong(it.date) + '.');
-    } else {
-      if (pendingDel === id) {
-        items = items.filter(function (x) { return x.id !== id; });
-        pendingDel = null; clearTimeout(delTimer);
-        save(); render(); say('Scadenza eliminata.');
-      } else {
-        pendingDel = id; clearTimeout(delTimer);
-        delTimer = setTimeout(function () { pendingDel = null; render(); }, 4000);
-        render();
-      }
+    } else if (act === 'elimina') {
+      pendingDel = id; clearTimeout(delTimer);
+      delTimer = setTimeout(function () { pendingDel = null; render(); }, 7000);
+      render();
+    } else if (act === 'annulla-del') {
+      pendingDel = null; clearTimeout(delTimer); render();
+    } else if (act === 'elimina-solo' || act === 'elimina-cal') {
+      var withCal = act === 'elimina-cal';
+      items = items.filter(function (x) { return x.id !== id; });
+      pendingDel = null; clearTimeout(delTimer);
+      save(); render();
+      if (withCal) exportCancel(it); else say('Scadenza eliminata.');
     }
   });
 
@@ -581,6 +590,32 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
       say('File pronto. Aprilo e tocca Aggiungi: meglio in un calendario chiamato Scadenzario.');
     } catch (e) {
       say('Non riesco a creare il file in questa finestra. Apri la pagina in Safari.');
+    }
+  }
+
+  function buildCancelIcs(it) {
+    var r = it.rep || 0;
+    var startIso = r ? (it.cal0 || nextOcc(it)) : (it.exp || it.date);
+    var d = parse(startIso), next = iso(addDays(d, 1));
+    var L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Scadenzario//IT', 'CALSCALE:GREGORIAN', 'METHOD:CANCEL',
+      'BEGIN:VEVENT', 'UID:' + it.id + '@scadenzario', 'DTSTAMP:' + utcStamp(new Date()), 'SEQUENCE:' + ((it.rev || 0) + 1), 'STATUS:CANCELLED',
+      'DTSTART;VALUE=DATE:' + startIso.replace(/-/g, ''), 'DTEND;VALUE=DATE:' + next.replace(/-/g, ''), 'SUMMARY:' + icsEsc(it.name)];
+    if (r) L.push('RRULE:' + rrule(r, d));
+    L.push('END:VEVENT', 'END:VCALENDAR');
+    return L.map(fold).join('\r\n') + '\r\n';
+  }
+  function exportCancel(it) {
+    try {
+      var blob = new Blob([buildCancelIcs(it)], { type: 'text/calendar;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      var slug = it.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      a.href = url; a.download = 'annulla-' + (slug || 'scadenza') + '.ics';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      say("Scadenza eliminata. Apri il file scaricato per toglierla dal Calendario. Se resta, eliminala a mano nell'app Calendario.");
+    } catch (e) {
+      say("Scadenza eliminata. Non riesco a creare il file di annullamento: toglila a mano dal Calendario.");
     }
   }
 
