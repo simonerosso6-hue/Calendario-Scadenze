@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Scadenzario">
-<meta name="app-version" content="8">
+<meta name="app-version" content="9">
 <meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.webmanifest">
@@ -201,6 +201,7 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
 .sheet ol.steps { font-size: 15px; }
 .sheet-x { background: var(--fill); border: 0; color: var(--muted); width: 32px; height: 32px; display: grid; place-items: center; cursor: pointer; border-radius: 50%; flex: none; }
 .ico { vertical-align: -4px; margin: 0 1px; }
+#installa { width: 100%; }
 </style>
 
 </head>
@@ -218,12 +219,13 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
       <li>Scorri e tocca <b>Aggiungi alla schermata Home</b>.</li>
       <li>Tocca <b>Aggiungi</b>.</li>
     </ol>
+    <p id="and-intro" hidden>Aprila dalla Home come un'app: a tutto schermo e utilizzabile anche senza connessione.</p>
     <ol class="steps" id="steps-and" hidden>
       <li>In Chrome tocca i <b>tre puntini</b> in alto a destra.</li>
       <li>Tocca <b>Installa app</b> oppure <b>Aggiungi a schermata Home</b>.</li>
       <li>Conferma con <b>Installa</b> o <b>Aggiungi</b>.</li>
     </ol>
-    <button type="button" class="btn primary small" id="installa" hidden>Installa Scadenzario</button>
+    <button type="button" class="btn primary" id="installa" hidden>Installa</button>
     <p id="and-note" hidden>Con Samsung Internet: tocca il menu in basso, poi Aggiungi pagina a, poi Schermata Home.</p>
     <p id="home-note">Prima tocca Copia dati in fondo alla pagina: l'icona può avere uno spazio dati separato da Safari.</p>
   </section>
@@ -723,7 +725,10 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
     $('steps-ios').hidden = true;
     $('steps-and').hidden = false;
     $('and-note').hidden = false;
+    $('and-intro').hidden = false;
     $('home-note').hidden = true;
+    $('home-title').textContent = 'Installa Scadenzario';
+    $('home-link').textContent = 'Installa app';
   }
   if (installed) $('home-link').hidden = true;
   $('home-link').addEventListener('click', function () { showSheet('home-sheet', true); });
@@ -737,6 +742,7 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
     $('installa').hidden = false;
     $('steps-and').hidden = true;
     $('and-note').hidden = true;
+    if (isAndroid && !installed && !homeClosed()) showSheet('home-sheet', true);
   });
   $('installa').addEventListener('click', function () {
     if (!installEvt) return;
@@ -747,7 +753,8 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
     showSheet('home-sheet', false);
     $('home-link').hidden = true;
   });
-  if ((isIos || isAndroid) && !installed && !homeClosed()) setTimeout(function () { showSheet('home-sheet', true); }, 700);
+  if (isIos && !installed && !homeClosed()) setTimeout(function () { showSheet('home-sheet', true); }, 700);
+  if (isAndroid && !installed && !homeClosed()) setTimeout(function () { if (!installEvt) showSheet('home-sheet', true); }, 2500);
 
   if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
     window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
