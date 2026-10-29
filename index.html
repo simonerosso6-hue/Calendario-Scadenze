@@ -6,7 +6,12 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Scadenzario">
-<meta name="app-version" content="6">
+<meta name="app-version" content="7">
+<meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
 :root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 body{margin:0}
@@ -207,12 +212,19 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg>
       </button>
     </div>
-    <ol class="steps">
+    <ol class="steps" id="steps-ios">
       <li>Tocca <svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg> <b>Condividi</b> nella barra di Safari. In alcune versioni è dentro il menu dei tre puntini.</li>
       <li>Scorri e tocca <b>Aggiungi alla schermata Home</b>.</li>
       <li>Tocca <b>Aggiungi</b>.</li>
     </ol>
-    <p>Prima tocca Copia dati in fondo alla pagina: l'icona può avere uno spazio dati separato da Safari.</p>
+    <ol class="steps" id="steps-and" hidden>
+      <li>In Chrome tocca i <b>tre puntini</b> in alto a destra.</li>
+      <li>Tocca <b>Installa app</b> oppure <b>Aggiungi a schermata Home</b>.</li>
+      <li>Conferma con <b>Installa</b> o <b>Aggiungi</b>.</li>
+    </ol>
+    <button type="button" class="btn primary small" id="installa" hidden>Installa Scadenzario</button>
+    <p id="and-note" hidden>Con Samsung Internet: tocca il menu in basso, poi Aggiungi pagina a, poi Schermata Home.</p>
+    <p id="home-note">Prima tocca Copia dati in fondo alla pagina: l'icona può avere uno spazio dati separato da Safari.</p>
   </section>
   <section class="sheet" id="update-sheet" role="status" hidden>
     <div class="sheet-head"><h2>Nuova versione disponibile</h2></div>
@@ -311,6 +323,7 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
 <script>
 (function () {
   var KEY = 'scadenzario.v1';
+  var isAndroid = /Android/i.test(navigator.userAgent);
   var MESI = ['GEN','FEB','MAR','APR','MAG','GIU','LUG','AGO','SET','OTT','NOV','DIC'];
   var storageOk = true;
   var pendingDel = null;
@@ -451,9 +464,10 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
             (checks.length ? '<p class="checks">Controlla il ' + checks.join(' · ') + '</p>' : '') +
             '<div class="acts">' +
               '<button type="button" class="btn small' + calHot + '" data-act="cal" data-id="' + it.id + '">' + calLabel + '</button>' +
+              (isAndroid ? actBtn('gcal', it.id, 'Google Calendar') : '') +
               (it.rep ? '' : '<button type="button" class="btn small" data-act="rinnova" data-id="' + it.id + '">Rinnovata (' + renewLabel(it.months || 12) + ')</button>') +
               (confirming
-                ? (it.exp
+                ? (it.exp && !isAndroid
                     ? actBtn('elimina-cal', it.id, 'Elimina e togli dal Calendario', ' hot') + actBtn('elimina-solo', it.id, 'Elimina solo qui') + actBtn('annulla-del', it.id, 'Annulla')
                     : actBtn('elimina-solo', it.id, 'Tocca ancora per eliminare'))
                 : actBtn('elimina', it.id, 'Elimina')) +
@@ -519,6 +533,7 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
     if (!it) return;
     var act = b.getAttribute('data-act');
     if (act === 'cal') { exportCal([it]); return; }
+    if (act === 'gcal') { var gu = gcalUrl(it); var w = window.open(gu, '_blank'); if (!w) location.href = gu; return; }
     if (act === 'rinnova') {
       var base = daysLeft(it.date) < 0 ? iso(today()) : it.date;
       it.date = addMonths(base, it.months || 12);
@@ -536,7 +551,9 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
       items = items.filter(function (x) { return x.id !== id; });
       pendingDel = null; clearTimeout(delTimer);
       save(); render();
-      if (withCal) exportCancel(it); else say('Scadenza eliminata.');
+      if (withCal) exportCancel(it);
+      else if (it.exp && isAndroid) say("Scadenza eliminata. Togli l'evento anche dal Calendario: da Android la pagina non può farlo.");
+      else say('Scadenza eliminata.');
     }
   });
 
@@ -605,12 +622,22 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
       setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
       list.forEach(function (i) { i.exp = i.date; });
       save(); render();
-      say('File pronto. Aprilo e tocca Aggiungi: meglio in un calendario chiamato Scadenzario.');
+      say(isAndroid ? 'File scaricato. Aprilo dalla notifica di Chrome o dalla cartella Download e scegli Calendario.' : 'File pronto. Aprilo e tocca Aggiungi: meglio in un calendario chiamato Scadenzario.');
     } catch (e) {
-      say('Non riesco a creare il file in questa finestra. Apri la pagina in Safari.');
+      say(isAndroid ? 'Non riesco a creare il file in questa finestra. Apri la pagina in Chrome.' : 'Non riesco a creare il file in questa finestra. Apri la pagina in Safari.');
     }
   }
 
+  function gcalUrl(it) {
+    var r = it.rep || 0;
+    var start = r ? nextOcc(it) : it.date;
+    var d = parse(start);
+    var q = 'action=TEMPLATE&text=' + encodeURIComponent(it.name) +
+      '&dates=' + start.replace(/-/g, '') + '/' + iso(addDays(d, 1)).replace(/-/g, '');
+    if (it.note) q += '&details=' + encodeURIComponent(it.note);
+    if (r) q += '&recur=' + encodeURIComponent('RRULE:' + rrule(r, d));
+    return 'https://calendar.google.com/calendar/render?' + q;
+  }
   function buildCancelIcs(it) {
     var r = it.rep || 0;
     var startIso = r ? (it.cal0 || nextOcc(it)) : (it.exp || it.date);
@@ -686,13 +713,40 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
   function homeClosed() { try { return localStorage.getItem(HOME_KEY) === '1'; } catch (e) { return false; } }
   var installed = (window.navigator && window.navigator.standalone) || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
   var isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var installEvt = null;
+  if (isAndroid) {
+    $('steps-ios').hidden = true;
+    $('steps-and').hidden = false;
+    $('and-note').hidden = false;
+    $('home-note').hidden = true;
+  }
   if (installed) $('home-link').hidden = true;
   $('home-link').addEventListener('click', function () { showSheet('home-sheet', true); });
   $('home-close').addEventListener('click', function () {
     showSheet('home-sheet', false);
     try { localStorage.setItem(HOME_KEY, '1'); } catch (e) {}
   });
-  if (isIos && !installed && !homeClosed()) setTimeout(function () { showSheet('home-sheet', true); }, 700);
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    installEvt = e;
+    $('installa').hidden = false;
+    $('steps-and').hidden = true;
+    $('and-note').hidden = true;
+  });
+  $('installa').addEventListener('click', function () {
+    if (!installEvt) return;
+    installEvt.prompt();
+    installEvt.userChoice.then(function () { installEvt = null; $('installa').hidden = true; showSheet('home-sheet', false); }, function () {});
+  });
+  window.addEventListener('appinstalled', function () {
+    showSheet('home-sheet', false);
+    $('home-link').hidden = true;
+  });
+  if ((isIos || isAndroid) && !installed && !homeClosed()) setTimeout(function () { showSheet('home-sheet', true); }, 700);
+
+  if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+  }
 
   var localVer = (document.querySelector('meta[name="app-version"]') || {}).content || '';
   var lastCheck = 0, newVer = '', laterVer = '';
