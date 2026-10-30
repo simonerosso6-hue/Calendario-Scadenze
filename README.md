@@ -23,7 +23,7 @@ App web (PWA) statica: HTML, CSS e JavaScript, senza server né dipendenze. I da
 ## Aggiornare
 
 1. Nel repository tocca **Add file** → **Upload files** e carica i file cambiati con lo stesso nome: sostituiscono quelli vecchi.
-2. Apri `sw.js`, tocca la matita e aumenta il numero nella riga `var CACHE = 'scadenzario-v10';` (per esempio `v11`). Poi **Commit changes**. Senza questo passaggio l'app non vede la novità.
+2. Apri `sw.js`, tocca la matita e aumenta il numero nella riga `var CACHE = 'scadenzario-v15';` (per esempio `v16`). Poi **Commit changes**. Senza questo passaggio l'app non vede la novità.
 3. Aspetta uno o due minuti e apri l'app. In basso compare **Nuova versione disponibile**: tocca **Aggiorna**. Finché non lo fai, l'app continua a usare la versione che hai.
 4. Se l'avviso non compare, tocca **Controlla aggiornamenti** in fondo alla pagina.
 
@@ -39,6 +39,7 @@ Le scadenze salvate non si perdono con gli aggiornamenti.
 ## Come funziona
 
 - **Istruzioni illustrate**: si aprono da sole al primo utilizzo e dal link **Come si usa** in fondo alla pagina.
+- **Prezzi e spese**: ogni scadenza può avere un prezzo, preciso o indicativo (per le spese che cambiano, come l'assicurazione). La voce **Spese** del menu in alto mostra il totale per mese o per anno, in due viste: *Quando paghi* (la spesa nel mese in cui scade) e *Costo medio* (la spesa divisa sui mesi in cui vale). I prezzi restano solo sul telefono e fanno parte di **Copia dati**.
 - **Usala come una vera app**: riquadro in alto per chi apre il sito dal browser. Su Android ha il pulsante **Installa**, su iPhone e iPad i passaggi scritti. Nei browser interni di Instagram, WhatsApp e simili chiede di aprire il link in Safari o Chrome. Si chiude con la **X** e torna dopo 14 giorni. Non compare se l'app è già installata.
 - **Calendario**: **Aggiungi al Calendario** scarica un file `.ics` con gli avvisi. La pagina non può sapere se l'hai importato, quindi chiede conferma con **Sì, aggiunto**. Su Android c'è anche **Google Calendar**.
 - **Copie**: **Copia dati** e **Ripristina da testo** servono per spostare le scadenze su un altro telefono.

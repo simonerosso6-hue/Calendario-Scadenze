@@ -243,6 +243,57 @@ body.has-update { padding-block-end: 210px; }
 .confirm { display: flex; flex-direction: column; gap: 8px; background: var(--fill); border-radius: 14px; padding: 10px 12px; margin-top: 4px; }
 .confirm p { font-size: 14px; color: var(--fg); }
 .confirm .acts { margin-top: 0; }
+
+/* Prezzi e statistiche */
+.view { display: flex; flex-direction: column; gap: 20px; }
+.view[hidden] { display: none; }
+.tabs { position: sticky; top: 0; z-index: 10; margin: -8px -4px; padding: 8px 4px; background: var(--bg); }
+.tabs .seg { display: flex; gap: 8px; padding: 0; background: none; border-radius: 0; }
+.tabs .seg button {
+  flex: 1 1 0; min-height: 48px; font-size: 17px; border-radius: 14px; cursor: pointer;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  background: var(--tint); color: var(--accent);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.16), 0 1px 0 rgba(255,255,255,0.25) inset;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+.tabs .seg button:active { opacity: 0.6; transform: scale(0.97); box-shadow: none; }
+.tabs .seg button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: transparent; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.price { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.price small { font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-left: 8px; }
+.editor { display: flex; flex-direction: column; gap: 10px; background: var(--fill); border-radius: 14px; padding: 12px; margin-top: 4px; }
+.editor input, .editor select { background: var(--surface); }
+.editor .acts { margin-top: 0; }
+.stats { background: var(--surface); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.stats h2 { font-family: var(--font-display); font-size: 22px; font-weight: 700; line-height: 1.2; }
+.stats .sub { font-size: 14px; color: var(--muted); }
+.stats h4 { margin: 0; font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; padding: 3px; background: var(--fill); border-radius: 12px; }
+.seg button { font: inherit; font-size: 14px; font-weight: 600; min-height: 40px; border: 0; border-radius: 10px; background: none; color: var(--muted); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 3px rgba(0,0,0,0.22); }
+.seg button:focus-visible, .stats .btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.snav { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.snav b { font-family: var(--font-display); font-size: 17px; font-weight: 600; text-align: center; flex: 1; }
+.snav .btn { min-width: 48px; padding-inline: 0; }
+.big { font-family: var(--font-display); font-size: 36px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.bars { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; align-items: end; height: 110px; border-bottom: 1px solid var(--line); }
+.bars .col { display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
+.bars .col.dim { opacity: 0.35; }
+.bars .c { background: var(--accent); border-radius: 4px 4px 0 0; }
+.bars .e { background: repeating-linear-gradient(-45deg, var(--accent) 0 2px, var(--tint) 2px 5px); border-radius: 4px 4px 0 0; }
+.bars .c + .e, .bars .e + .c { border-radius: 0; }
+.blab { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; font-size: 11px; font-weight: 600; color: var(--muted); text-align: center; margin-top: -8px; }
+.blab .now { color: var(--accent); }
+.lg { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+.lg i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 5px; background: var(--accent); }
+.lg i.e { background: repeating-linear-gradient(-45deg, var(--accent) 0 2px, var(--tint) 2px 5px); }
+.cats, .vox { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.cats li { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; font-size: 15px; }
+.cats .v, .vox .v { font-weight: 600; font-variant-numeric: tabular-nums; }
+.trk { grid-column: 1 / -1; height: 8px; border-radius: 4px; background: var(--fill); overflow: hidden; }
+.trk i { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
+.vox li { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; font-size: 15px; }
+.vox .dt { font-size: 13px; color: var(--muted); }
 #sheets-bottom {
   position: fixed; z-index: 21;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
@@ -393,6 +444,14 @@ body.has-update { padding-block-end: 210px; }
     <h1>Scadenzario</h1>
   </header>
 
+  <nav class="tabs" aria-label="Sezioni">
+    <div class="seg" role="group">
+      <button type="button" data-tab="scad" aria-pressed="true">Scadenze</button>
+      <button type="button" data-tab="spese" aria-pressed="false">Spese</button>
+    </div>
+  </nav>
+
+  <div class="view" id="view-scad">
   <section class="strip" aria-label="Riepilogo">
     <div class="hot"><b id="n-scadute">0</b><span>scadute</span></div>
     <div><b id="n-30">0</b><span>entro 30 giorni</span></div>
@@ -433,6 +492,18 @@ body.has-update { padding-block-end: 210px; }
         <label for="mesi">Dura (mesi)</label>
         <input id="mesi" type="number" inputmode="numeric" min="1" max="240" value="12">
       </div>
+      <div class="field wide">
+        <div class="pair">
+          <div class="field">
+            <label for="prezzo">Prezzo (€)</label>
+            <input id="prezzo" type="text" inputmode="decimal" autocomplete="off" placeholder="Facoltativo">
+          </div>
+          <div class="field">
+            <label for="est">Tipo</label>
+            <select id="est"><option value="0">Preciso</option><option value="1">Indicativo</option></select>
+          </div>
+        </div>
+      </div>
       <div class="field wide" id="f-nota" hidden>
         <label for="nota">Cosa fare</label>
         <input id="nota" type="text" maxlength="200" placeholder="Facoltativo">
@@ -451,6 +522,11 @@ body.has-update { padding-block-end: 210px; }
   </div>
 
   <ul class="list" id="lista"></ul>
+  </div>
+
+  <div class="view" id="view-spese" hidden>
+    <section class="stats" id="stats" aria-label="Spese"></section>
+  </div>
 
   <details>
     <summary>Copie e promemoria</summary>
@@ -490,7 +566,7 @@ body.has-update { padding-block-end: 210px; }
     { k: 'pat', name: 'Patente', months: 120, note: 'Il rinnovo richiede una visita medica. Fissala qualche settimana prima della scadenza.' },
     { k: 'rev', name: 'Revisione auto', months: 24, rep: 24, note: 'Va fatta entro la fine del mese di scadenza. Prenota in officina autorizzata o alla motorizzazione.' },
     { k: 'bollo', name: 'Bollo auto', months: 12, rep: 12, note: "Controlla importo e scadenza sul sito dell'ACI e paga online o in tabaccheria." },
-    { k: 'rca', name: 'Assicurazione auto', months: 12, rep: 12, note: 'Confronta qualche preventivo un mese prima della scadenza.' },
+    { k: 'rca', name: 'Assicurazione auto', months: 12, rep: 12, est: 1, note: 'Confronta qualche preventivo un mese prima della scadenza.' },
     { k: 'gar', name: 'Garanzia', months: 24, note: 'Tieni scontrino o fattura. La garanzia legale dura 24 mesi; denuncia un difetto entro 2 mesi da quando lo scopri.' },
     { k: 'abb', name: 'Abbonamento con rinnovo automatico', months: 12, rep: 12, note: 'Controlla la data di rinnovo e disdici prima se non ti serve più.' },
     { k: 'abbm', name: 'Abbonamento mensile', months: 1, rep: 1, note: "Controlla l'importo addebitato ogni mese e disdici se non lo usi più." },
@@ -550,6 +626,34 @@ body.has-update { padding-block-end: 210px; }
   function renewLabel(m) { return m % 12 === 0 ? '+' + plural(m / 12, 'anno', 'anni') : '+' + plural(m, 'mese', 'mesi'); }
   function uid() { return Math.random().toString(36).slice(2, 9); }
 
+  /* prezzi */
+  var MESI_L = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
+  var GROUPS = [
+    { g: 'auto', name: 'Auto', ks: ['rev', 'bollo', 'rca'] },
+    { g: 'doc', name: 'Documenti e tasse', ks: ['ci', 'pass', 'pat', 'isee', '730'] },
+    { g: 'abb', name: 'Abbonamenti e rate', ks: ['abb', 'abbm', 'rata', 'prova'] },
+    { g: 'altro', name: 'Altro', ks: [] }
+  ];
+  function groupOf(it) {
+    var k = it.k;
+    if (!k) { var c = CAT.filter(function (x) { return x.name === it.name; })[0]; k = c ? c.k : 'altro'; }
+    for (var i = 0; i < GROUPS.length; i++) if (GROUPS[i].ks.indexOf(k) >= 0) return GROUPS[i].g;
+    return 'altro';
+  }
+  function toAmt(v) {
+    var t = String(v == null ? '' : v).replace(/[\s€]/g, '');
+    if (t.indexOf(',') >= 0) t = t.replace(/\./g, '').replace(',', '.');
+    var n = parseFloat(t);
+    return isFinite(n) && n > 0 && n < 1e7 ? Math.round(n * 100) / 100 : null;
+  }
+  function fmtEur(v, whole) {
+    var r = whole ? Math.round(v) : Math.round(v * 100) / 100;
+    var frac = Math.abs(r - Math.round(r)) < 0.005;
+    var p = (frac ? String(Math.round(r)) : r.toFixed(2)).split('.');
+    p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return p.join(',') + '\u00a0€';
+  }
+
   function seed() {
     var t = today();
     function at(n) { return iso(addDays(t, n)); }
@@ -557,9 +661,9 @@ body.has-update { padding-block-end: 210px; }
     var y = t.getFullYear();
     return [
       { id: uid(), name: 'Prova gratuita streaming', date: at(6), months: 1, note: c('prova').note, example: true },
-      { id: uid(), name: 'Revisione auto', date: at(23), months: 24, rep: 24, note: c('rev').note, example: true },
-      { id: uid(), name: 'Bollo auto', date: at(34), months: 12, rep: 12, note: c('bollo').note, example: true },
-      { id: uid(), name: 'Abbonamento musica', date: at(12), months: 1, rep: 1, note: c('abbm').note, example: true },
+      { id: uid(), k: 'rev', name: 'Revisione auto', date: at(23), months: 24, rep: 24, note: c('rev').note, amt: 79, est: false, example: true },
+      { id: uid(), k: 'bollo', name: 'Bollo auto', date: at(34), months: 12, rep: 12, note: c('bollo').note, amt: 190, est: true, example: true },
+      { id: uid(), k: 'abbm', name: 'Abbonamento musica', date: at(12), months: 1, rep: 1, note: c('abbm').note, amt: 10.99, est: false, example: true },
       { id: uid(), name: 'ISEE', date: y + '-12-31', months: 12, rep: 12, note: c('isee').note, example: true },
       { id: uid(), name: "Carta d'identità elettronica", date: at(140), months: 120, note: c('ci').note, example: true },
       { id: uid(), name: 'Passaporto', date: at(410), months: 120, note: c('pass').note, example: true },
@@ -568,6 +672,7 @@ body.has-update { padding-block-end: 210px; }
   }
 
   var items = [];
+  var editId = null;
   function load() {
     var raw = null;
     try { raw = localStorage.getItem(KEY); } catch (e) { storageOk = false; }
@@ -616,11 +721,13 @@ body.has-update { padding-block-end: 210px; }
           '<div class="stub"><span class="d">' + String(d.getDate()).padStart(2, '0') + '</span><span class="m">' + MESI[d.getMonth()] + '</span><span class="y">' + d.getFullYear() + '</span></div>' +
           '<div class="body">' +
             '<div class="top"><h3>' + esc(it.name) + (it.example ? '<span class="tag">Esempio</span>' : '') + (it.rep ? '<span class="tag">' + repLabel(it.rep) + '</span>' : '') + '</h3><span class="chip">' + rel(n) + '</span></div>' +
+            (it.amt > 0 ? '<p class="price">' + (it.est ? '~' : '') + fmtEur(it.amt) + (it.est ? '<small>Indicativo</small>' : '') + '</p>' : '') +
             (it.note ? '<p class="note">' + esc(it.note) + '</p>' : '') +
             (checks.length ? '<p class="checks">Controlla il ' + checks.join(' · ') + '</p>' : '') +
             '<div class="acts">' +
               '<button type="button" class="btn small' + calHot + '" data-act="cal" data-id="' + it.id + '">' + calLabel + '</button>' +
               (isAndroid ? actBtn('gcal', it.id, 'Google Calendar') : '') +
+              (editId === it.id ? '' : actBtn('prezzo', it.id, it.amt > 0 ? 'Cambia prezzo' : 'Aggiungi prezzo')) +
               (it.rep ? '' : '<button type="button" class="btn small" data-act="rinnova" data-id="' + it.id + '">Rinnovata (' + renewLabel(it.months || 12) + ')</button>') +
               (confirming
                 ? (inCal && !isAndroid
@@ -628,10 +735,12 @@ body.has-update { padding-block-end: 210px; }
                     : actBtn('elimina-solo', it.id, 'Tocca ancora per eliminare'))
                 : actBtn('elimina', it.id, 'Elimina')) +
             '</div>' +
+            (editId === it.id ? '<div class="editor"><div class="pair"><div class="field"><label for="pe-amt">Prezzo (€)</label><input id="pe-amt" type="text" inputmode="decimal" autocomplete="off" placeholder="Es. 450" value="' + (it.amt > 0 ? String(it.amt).replace('.', ',') : '') + '"></div><div class="field"><label for="pe-est">Tipo</label><select id="pe-est"><option value="0"' + (it.est ? '' : ' selected') + '>Preciso</option><option value="1"' + (it.est ? ' selected' : '') + '>Indicativo</option></select></div></div><div class="acts">' + actBtn('prezzo-ok', it.id, 'Salva prezzo', ' primary') + (it.amt > 0 ? actBtn('prezzo-via', it.id, 'Togli prezzo') : '') + actBtn('prezzo-no', it.id, 'Annulla') + '</div></div>' : '') +
             (it.pend ? '<div class="confirm"><p>Hai aggiunto l\'evento al Calendario?</p><div class="acts">' + actBtn('cal-ok', it.id, 'Sì, aggiunto', ' primary') + actBtn('cal-no', it.id, 'Non ancora') + '</div></div>' : '') +
           '</div></li>';
       }).join('');
     }
+    renderStats();
     $('foot').textContent = storageOk ? '' : 'In questa finestra il salvataggio non è disponibile: le modifiche restano finché non chiudi la pagina.';
   }
 
@@ -646,6 +755,8 @@ body.has-update { padding-block-end: 210px; }
     $('nota').value = c.note;
     $('data').value = c.date ? c.date() : '';
     $('rep').value = String(c.rep || 0);
+    $('prezzo').value = '';
+    $('est').value = c.est ? '1' : '0';
     var altro = c.k === 'altro';
     $('f-nome').hidden = !altro;
     $('f-nota').hidden = !altro;
@@ -677,7 +788,9 @@ body.has-update { padding-block-end: 210px; }
     var name = $('nome').value.trim(), date = $('data').value;
     if (!name || !date) { say('Inserisci un nome e una data.'); return; }
     var m = parseInt($('mesi').value, 10);
-    var ni = { id: uid(), name: name, date: date, months: m > 0 ? m : 12, rep: parseInt($('rep').value, 10) || 0, note: $('nota').value.trim() };
+    var pr = $('prezzo').value.trim(), amt = toAmt(pr);
+    if (pr && amt === null) { say('Controlla il prezzo: scrivi solo un numero, ad esempio 450 o 79,90.'); return; }
+    var ni = { id: uid(), k: tipo.value, name: name, date: date, months: m > 0 ? m : 12, rep: parseInt($('rep').value, 10) || 0, note: $('nota').value.trim(), amt: amt, est: $('est').value === '1' };
     items.push(ni);
     save();
     openForm(false);
@@ -693,6 +806,16 @@ body.has-update { padding-block-end: 210px; }
     var it = items.filter(function (x) { return x.id === id; })[0];
     if (!it) return;
     var act = b.getAttribute('data-act');
+    if (act === 'prezzo') { editId = id; render(); return; }
+    if (act === 'prezzo-no') { editId = null; render(); return; }
+    if (act === 'prezzo-via') { it.amt = null; it.est = false; editId = null; save(); render(); say('Prezzo tolto.'); return; }
+    if (act === 'prezzo-ok') {
+      var raw = $('pe-amt').value.trim(), v = toAmt(raw);
+      if (raw && v === null) { say('Controlla il prezzo: scrivi solo un numero, ad esempio 450 o 79,90.'); return; }
+      it.amt = v; it.est = v !== null && $('pe-est').value === '1';
+      editId = null; save(); render(); say(v === null ? 'Prezzo tolto.' : 'Prezzo salvato.');
+      return;
+    }
     if (act === 'cal') { exportCal([it]); return; }
     if (act === 'gcal') { it.pend = it.date; save(); render(); var gu = gcalUrl(it); var w = window.open(gu, '_blank'); if (!w) location.href = gu; return; }
     if (act === 'cal-ok') { it.exp = it.pend; it.pend = ''; save(); render(); say('Segnato: la scadenza è nel Calendario.'); return; }
@@ -724,6 +847,123 @@ body.has-update { padding-block-end: 210px; }
   $('togli-esempi').addEventListener('click', function () {
     items = items.filter(function (i) { return !i.example; });
     save(); render(); say('Esempi rimossi.');
+  });
+
+  /* menu in alto */
+  document.querySelector('.tabs').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-tab]');
+    if (!b) return;
+    var t = b.getAttribute('data-tab');
+    $('view-scad').hidden = t !== 'scad';
+    $('view-spese').hidden = t !== 'spese';
+    Array.prototype.forEach.call(document.querySelectorAll('.tabs button'), function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+    window.scrollTo(0, 0);
+  });
+
+  /* statistiche */
+  var st = { scope: 'a', mode: 'cash', y: today().getFullYear(), m: today().getMonth() };
+  function occIn(it, from, to) {
+    var out = [], r = it.rep || 0;
+    if (!r) { if (it.date >= from && it.date <= to) out.push(it.date); return out; }
+    for (var k = 0, cur = it.date; cur <= to && k < 3000; k++, cur = addMonths(it.date, k * r)) if (cur >= from) out.push(cur);
+    return out;
+  }
+  function seg(name, opts, cur) {
+    return '<div class="seg" role="group">' + opts.map(function (o) {
+      return '<button type="button" data-st="' + name + '" data-v="' + o[0] + '" aria-pressed="' + (cur === o[0] ? 'true' : 'false') + '">' + o[1] + '</button>';
+    }).join('') + '</div>';
+  }
+  function renderStats() {
+    var box = $('stats');
+    var priced = items.filter(function (i) { return i.amt > 0; });
+    var h = '';
+    if (!priced.length) {
+      box.innerHTML = h + '<p class="sub">Tocca Aggiungi prezzo su una scadenza, o scrivi il prezzo quando la crei. Qui vedrai quanto spendi al mese e all\'anno. Per le spese che cambiano, come l\'assicurazione, puoi indicare un prezzo indicativo.</p>';
+      return;
+    }
+    var cash = st.mode === 'cash', ym = st.scope === 'm';
+    var months = [], cats = {}, rows = [], i;
+    for (i = 0; i < 12; i++) months.push({ c: 0, e: 0 });
+    GROUPS.forEach(function (g) { cats[g.g] = { c: 0, e: 0 }; });
+    if (cash) {
+      var from = st.y + '-01-01', to = st.y + '-12-31';
+      priced.forEach(function (it) {
+        var b = it.est ? 'e' : 'c';
+        occIn(it, from, to).forEach(function (dt) {
+          var mi = parseInt(dt.slice(5, 7), 10) - 1;
+          months[mi][b] += it.amt;
+          if (!ym || mi === st.m) {
+            cats[groupOf(it)][b] += it.amt;
+            if (ym) rows.push({ it: it, dt: dt });
+          }
+        });
+      });
+    } else {
+      priced.forEach(function (it) {
+        cats[groupOf(it)][it.est ? 'e' : 'c'] += it.amt / (it.rep || it.months || 12) * (ym ? 1 : 12);
+      });
+    }
+    var tc = 0, te = 0;
+    GROUPS.forEach(function (g) { tc += cats[g.g].c; te += cats[g.g].e; });
+    var total = tc + te, whole = !cash;
+
+    h += seg('scope', [['m', 'Mese'], ['a', 'Anno']], st.scope) + seg('mode', [['cash', 'Quando paghi'], ['avg', 'Costo medio']], st.mode);
+    if (cash) {
+      h += '<div class="snav"><button type="button" class="btn small" data-st="prev" aria-label="Periodo precedente">‹</button><b>' + (ym ? MESI_L[st.m] + ' ' + st.y : st.y) + '</b><button type="button" class="btn small" data-st="next" aria-label="Periodo successivo">›</button></div>';
+    } else {
+      h += '<h4>' + (ym ? 'Costo medio al mese' : 'Costo medio all\'anno') + '</h4>';
+    }
+    h += '<div><div class="big">' + (te > 0 ? '~' : '') + fmtEur(total, whole) + '</div>';
+    if (te > 0) h += '<p class="sub">di cui ' + fmtEur(te, whole) + ' indicativi</p>';
+    if (cash && !ym && total > 0) h += '<p class="sub">Pari a circa ' + fmtEur(total / 12, true) + ' al mese</p>';
+    if (cash && total === 0) h += '<p class="sub">Nessuna spesa in questo periodo.</p>';
+    if (!cash) h += '<p class="sub">Ogni spesa è divisa sui mesi in cui vale: ad esempio un bollo di 190 € vale circa 16 € al mese.</p>';
+    h += '</div>';
+
+    if (cash) {
+      var mx = 0, mxi = -1, anyE = false, nowM = today().getFullYear() === st.y ? today().getMonth() : -1;
+      months.forEach(function (m, k) { if (m.c + m.e > mx) { mx = m.c + m.e; mxi = k; } if (m.e > 0) anyE = true; });
+      h += '<div class="bars" role="img" aria-label="Spesa per mese nel ' + st.y + '">' + months.map(function (m, k) {
+        return '<div class="col' + (ym && k !== st.m ? ' dim' : '') + '">' +
+          (m.e > 0 ? '<div class="e" style="height:' + (m.e / mx * 100).toFixed(1) + '%"></div>' : '') +
+          (m.c > 0 ? '<div class="c" style="height:' + (m.c / mx * 100).toFixed(1) + '%"></div>' : '') + '</div>';
+      }).join('') + '</div>';
+      h += '<div class="blab" aria-hidden="true">' + 'GFMAMGLASOND'.split('').map(function (l, k) { return '<span' + (k === nowM ? ' class="now"' : '') + '>' + l + '</span>'; }).join('') + '</div>';
+      h += '<div class="lg"><span><i></i>Preciso</span>' + (anyE ? '<span><i class="e"></i>Indicativo</span>' : '') + '</div>';
+      if (mxi >= 0 && !ym) h += '<p class="sub">Mese più caro: ' + MESI_L[mxi] + ', ' + fmtEur(mx) + '.</p>';
+    }
+
+    var order = GROUPS.filter(function (g) { return cats[g.g].c + cats[g.g].e > 0; })
+      .sort(function (a, b) { return (cats[b.g].c + cats[b.g].e) - (cats[a.g].c + cats[a.g].e); });
+    if (order.length) {
+      var top = cats[order[0].g].c + cats[order[0].g].e;
+      h += '<h4>Per categoria</h4><ul class="cats">' + order.map(function (g) {
+        var v = cats[g.g].c + cats[g.g].e;
+        return '<li><span>' + g.name + '</span><span class="v">' + (cats[g.g].e > 0 ? '~' : '') + fmtEur(v, whole) + '</span><span class="trk"><i style="width:' + (v / top * 100).toFixed(1) + '%"></i></span></li>';
+      }).join('') + '</ul>';
+    }
+    if (rows.length) {
+      rows.sort(function (a, b) { return a.dt < b.dt ? -1 : a.dt > b.dt ? 1 : 0; });
+      h += '<h4>Voci del mese</h4><ul class="vox">' + rows.map(function (r) {
+        return '<li><span>' + esc(r.it.name) + '</span><span class="v">' + (r.it.est ? '~' : '') + fmtEur(r.it.amt) + '</span><span class="dt">' + fmtLong(r.dt) + '</span></li>';
+      }).join('') + '</ul>';
+    }
+    box.innerHTML = h;
+  }
+  $('stats').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-st]');
+    if (!b) return;
+    var a = b.getAttribute('data-st'), v = b.getAttribute('data-v');
+    if (a === 'scope') st.scope = v;
+    else if (a === 'mode') st.mode = v;
+    else {
+      var d = a === 'next' ? 1 : -1;
+      if (st.scope === 'm') { st.m += d; if (st.m < 0) { st.m = 11; st.y--; } else if (st.m > 11) { st.m = 0; st.y++; } }
+      else st.y += d;
+    }
+    renderStats();
+    var again = v ? document.querySelector('#stats button[data-st="' + a + '"][data-v="' + v + '"]') : document.querySelector('#stats button[data-st="' + a + '"]');
+    if (again) again.focus({ preventScroll: true });
   });
 
   /* calendario */
@@ -850,7 +1090,7 @@ body.has-update { padding-block-end: 210px; }
       var arr = JSON.parse($('io').value);
       if (!Array.isArray(arr)) throw new Error('formato');
       var ok = arr.filter(function (i) { return i && typeof i.name === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(i.date); })
-        .map(function (i) { return { id: i.id || uid(), name: i.name, date: i.date, months: i.months > 0 ? i.months : 12, note: i.note || '', example: !!i.example, rev: i.rev || 0, rep: i.rep > 0 ? i.rep : 0, cal0: i.cal0 || '', exp: '', pend: '' }; });
+        .map(function (i) { return { id: i.id || uid(), name: i.name, date: i.date, months: i.months > 0 ? i.months : 12, note: i.note || '', example: !!i.example, rev: i.rev || 0, rep: i.rep > 0 ? i.rep : 0, cal0: i.cal0 || '', exp: '', pend: '', k: i.k || '', amt: toAmt(i.amt), est: !!i.est }; });
       if (!ok.length) throw new Error('vuoto');
       items = ok; save(); render();
       say('Ripristinate ' + plural(ok.length, 'scadenza', 'scadenze') + '.');
