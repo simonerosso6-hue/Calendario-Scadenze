@@ -166,6 +166,9 @@ summary::after { content: ""; width: 8px; height: 8px; border-right: 2.5px solid
 details[open] summary::after { transform: rotate(45deg); }
 details .inner { display: flex; flex-direction: column; gap: 12px; padding-bottom: 16px; }
 details p { color: var(--muted); font-size: 15px; max-width: 65ch; }
+.sub-h { margin: 6px 0 0; font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.stato.warn { color: var(--soon-fg); font-weight: 600; }
+.dot { display: inline-block; width: 8px; height: 8px; margin-left: 8px; border-radius: 50%; background: var(--soon-fg); vertical-align: 2px; }
 #msg { font-size: 14px; min-height: 20px; color: var(--muted); padding: 0 4px; }
 .foot { font-size: 13px; color: var(--muted); padding: 0 4px; }
 ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 8px; font-size: 15px; max-width: 65ch; }
@@ -252,6 +255,8 @@ body.guide-open { position: fixed; left: 0; right: 0; width: 100%; overflow: hid
 .guide-btns .btn { flex: 1 1 0; }
 #g-salta { background: var(--fill); color: var(--muted); }
 .g-demo { text-align: left; }
+#demo-bar { background: var(--notice-bg); color: var(--notice-fg); }
+#demo-bar p { color: inherit; }
 .g-demo .item { background: var(--fill); padding: 10px; gap: 12px; }
 .g-demo .stub { background-clip: padding-box; }
 .confirm { display: flex; flex-direction: column; gap: 8px; background: var(--fill); border-radius: 14px; padding: 10px 12px; margin-top: 4px; }
@@ -345,7 +350,7 @@ body.guide-open { position: fixed; left: 0; right: 0; width: 100%; overflow: hid
     </ol>
     <button type="button" class="btn primary" id="installa" hidden>Installa</button>
     <p id="and-note" hidden>Con Samsung Internet: tocca il menu in basso, poi Aggiungi pagina a, poi Schermata Home.</p>
-    <p id="home-note">Prima tocca Copia dati in fondo alla pagina: l'icona può avere uno spazio dati separato da Safari.</p>
+    <p id="home-note">Prima tocca Salva una copia in fondo alla pagina: l'icona ha uno spazio dati separato da Safari. Poi aprila e tocca Carica una copia.</p>
   </section>
   <section class="sheet" id="about-sheet" role="dialog" aria-labelledby="about-title" hidden>
     <div class="sheet-head">
@@ -480,6 +485,7 @@ body.guide-open { position: fixed; left: 0; right: 0; width: 100%; overflow: hid
       <button type="button" class="link" id="guida-link">Come si usa</button>
       <button type="button" class="link" id="home-link">Aggiungi alla Home</button>
       <button type="button" class="link" id="condividi">Condividi con un amico</button>
+      <button type="button" class="link" id="demo-link">Modalità demo</button>
       <button type="button" class="link" id="about-link">About us</button>
     </div>
   </header>
@@ -490,6 +496,11 @@ body.guide-open { position: fixed; left: 0; right: 0; width: 100%; overflow: hid
       <button type="button" data-tab="spese" aria-pressed="false">Spese</button>
     </div>
   </nav>
+
+  <div class="sample" id="demo-bar" hidden>
+    <p>Modalità demo: scadenze di esempio, non vengono salvate. Le tue sono al sicuro.</p>
+    <button type="button" class="btn small" id="esci-demo">Esci dalla demo</button>
+  </div>
 
   <div class="view" id="view-scad">
   <section class="strip" aria-label="Riepilogo">
@@ -568,16 +579,36 @@ body.guide-open { position: fixed; left: 0; right: 0; width: 100%; overflow: hid
     <section class="stats" id="stats" aria-label="Spese"></section>
   </div>
 
-  <details>
-    <summary>Copie e promemoria</summary>
+  <details id="copie">
+    <summary><span>Salva e sposta i dati<i class="dot" id="copia-dot" hidden></i></span></summary>
     <div class="inner">
-      <p>I dati stanno solo in questo browser. Per averne una copia, o per portarli su un altro telefono, copia il testo e incollalo dove vuoi. Gli avvisi arrivano dal Calendario: usa il pulsante Aggiungi al Calendario su ogni scadenza.</p>
+      <p>I tuoi dati stanno solo su questo telefono. Salva una copia per non perderli o per portarli su un altro dispositivo.</p>
+      <p class="stato" id="copia-stato"></p>
       <div class="row">
-        <button type="button" class="btn small" id="copia-elenco">Copia elenco</button>
-        <button type="button" class="btn small" id="copia-dati">Copia dati</button>
-        <button type="button" class="btn small" id="ripristina">Ripristina da testo</button>
+        <button type="button" class="btn primary small" id="salva-copia">Salva una copia</button>
+        <button type="button" class="btn small" id="carica-copia">Carica una copia</button>
       </div>
-      <textarea id="io" rows="5" aria-label="Testo per copia e ripristino" placeholder="Qui compare il testo da copiare. Per ripristinare, incolla i dati qui e tocca Ripristina da testo."></textarea>
+      <input type="file" id="file-copia" accept=".json,application/json" hidden>
+      <div class="confirm" id="import-box" hidden>
+        <p id="import-testo"></p>
+        <div class="acts">
+          <button type="button" class="btn small primary" id="import-sostituisci">Sostituisci le mie</button>
+          <button type="button" class="btn small" id="import-aggiungi">Aggiungi alle mie</button>
+          <button type="button" class="btn small" id="import-annulla">Annulla</button>
+        </div>
+      </div>
+      <h4 class="sub-h">Per spostare i dati su un altro telefono</h4>
+      <ol class="steps">
+        <li>Su questo telefono tocca <b>Salva una copia</b> e invia il file a te stesso: AirDrop, Messaggi, Mail oppure Salva su File.</li>
+        <li>Sull'altro telefono apri Scadenzario e tocca <b>Carica una copia</b>.</li>
+        <li>Scegli il file e tocca <b>Sostituisci le mie</b>.</li>
+      </ol>
+      <h4 class="sub-h">Altri modi</h4>
+      <div class="row">
+        <button type="button" class="btn small" id="copia-appunti">Copia negli appunti</button>
+        <button type="button" class="btn small" id="incolla-appunti">Incolla dagli appunti</button>
+        <button type="button" class="btn small" id="copia-elenco">Copia l'elenco come testo</button>
+      </div>
     </div>
   </details>
 
@@ -711,6 +742,7 @@ body.guide-open { position: fixed; left: 0; right: 0; width: 100%; overflow: hid
 
   var items = [];
   var editId = null;
+  var demo = false, realItems = null;
   function load() {
     var raw = null;
     try { raw = localStorage.getItem(KEY); } catch (e) { storageOk = false; }
@@ -724,6 +756,7 @@ body.guide-open { position: fixed; left: 0; right: 0; width: 100%; overflow: hid
     save();
   }
   function save() {
+    if (demo) return;
     try { localStorage.setItem(KEY, JSON.stringify({ v: 1, items: items })); }
     catch (e) { storageOk = false; }
   }
@@ -739,7 +772,10 @@ body.guide-open { position: fixed; left: 0; right: 0; width: 100%; overflow: hid
     $('n-scadute').textContent = late;
     $('n-30').textContent = soon;
     $('n-tot').textContent = sorted.length;
-    $('sample').hidden = !items.some(function (i) { return i.example; });
+    $('sample').hidden = demo || !items.some(function (i) { return i.example; });
+    $('demo-bar').hidden = !demo;
+    $('demo-link').textContent = demo ? 'Esci dalla modalità demo' : 'Modalità demo';
+    statoCopia();
 
     var list = $('lista');
     if (!sorted.length) {
@@ -855,7 +891,7 @@ body.guide-open { position: fixed; left: 0; right: 0; width: 100%; overflow: hid
       return;
     }
     if (act === 'cal') { exportCal([it]); return; }
-    if (act === 'gcal') { it.pend = it.date; save(); render(); var gu = gcalUrl(it); var w = window.open(gu, '_blank'); if (!w) location.href = gu; return; }
+    if (act === 'gcal') { if (demo) { say('In demo non si aggiunge nulla al Calendario.'); return; } it.pend = it.date; save(); render(); var gu = gcalUrl(it); var w = window.open(gu, '_blank'); if (!w) location.href = gu; return; }
     if (act === 'cal-ok') { it.exp = it.pend; it.pend = ''; save(); render(); say('Segnato: la scadenza è nel Calendario.'); return; }
     if (act === 'cal-no') { it.pend = ''; save(); render(); return; }
     if (act === 'rinnova') {
@@ -1053,6 +1089,7 @@ body.guide-open { position: fixed; left: 0; right: 0; width: 100%; overflow: hid
     return L.map(fold).join('\r\n') + '\r\n';
   }
   function exportCal(list) {
+    if (demo) { say('In demo non si aggiunge nulla al Calendario.'); return; }
     try {
       list.forEach(function (i) { if (i.rep && !i.cal0) i.cal0 = nextOcc(i); });
       var blob = new Blob([buildIcs(list)], { type: 'text/calendar;charset=utf-8' });
@@ -1106,35 +1143,128 @@ body.guide-open { position: fixed; left: 0; right: 0; width: 100%; overflow: hid
     }
   }
 
-  /* copie */
-  function copy(text) {
-    var ta = $('io');
-    ta.value = text;
-    ta.focus(); ta.select();
-    var done = function () { say('Copiato.'); };
-    var fail = function () { say('Seleziona il testo nel riquadro e copialo a mano.'); };
-    try {
-      navigator.clipboard.writeText(text).then(done, fail);
-    } catch (e) { fail(); }
+  /* copie e spostamento dati: file da salvare e da caricare, niente codici a vista */
+  var BACKUP_KEY = 'scadenzario.copia.data';
+  var daImportare = null;
+  function statoCopia() {
+    var mie = items.filter(function (x) { return !x.example; }).length;
+    var ts = 0;
+    try { ts = parseInt(localStorage.getItem(BACKUP_KEY), 10) || 0; } catch (e) {}
+    var vecchia = ts && Date.now() - ts > 30 * 864e5;
+    var serve = !demo && mie > 0 && (!ts || vecchia);
+    var el = $('copia-stato');
+    $('copia-dot').hidden = !serve;
+    el.className = serve ? 'stato warn' : 'stato';
+    if (demo) el.textContent = 'In demo non si possono salvare copie.';
+    else if (!ts) el.textContent = mie > 0 ? 'Non hai ancora salvato una copia.' : 'Nessuna copia salvata. Ti servirà quando avrai inserito le tue scadenze.';
+    else el.textContent = 'Ultima copia: ' + new Date(ts).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' }) + (vecchia ? '. È passato un po\u2019 di tempo: salvane una nuova.' : '.');
   }
+  function segnaCopia() { try { localStorage.setItem(BACKUP_KEY, String(Date.now())); } catch (e) {} statoCopia(); }
+  function copyText(text, okMsg) {
+    var done = function () { say(okMsg); };
+    var fallback = function () {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;font-size:16px';
+      document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      ta.remove();
+      if (ok) done(); else say('Non riesco a copiare in questa finestra.');
+    };
+    try { navigator.clipboard.writeText(text).then(done, fallback); } catch (e) { fallback(); }
+  }
+  function datiCopia() { return JSON.stringify({ app: 'Scadenzario', v: 1, salvato: iso(today()), items: items }); }
+  function leggiCopia(text) {
+    var o = JSON.parse(text);
+    var arr = Array.isArray(o) ? o : (o && Array.isArray(o.items) ? o.items : null);
+    if (!arr) throw new Error('formato');
+    var ok = arr.filter(function (i) { return i && typeof i.name === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(i.date); })
+      .map(function (i) { return { id: i.id || uid(), name: i.name, date: i.date, months: i.months > 0 ? i.months : 12, note: i.note || '', example: !!i.example, rev: i.rev || 0, rep: i.rep > 0 ? i.rep : 0, cal0: i.cal0 || '', exp: '', pend: '', k: i.k || '', amt: toAmt(i.amt), est: !!i.est }; });
+    if (!ok.length) throw new Error('vuoto');
+    return ok;
+  }
+  function chiudiImport() { daImportare = null; $('import-box').hidden = true; }
+  function proponiImport(text) {
+    if (demo) { say('Esci dalla demo prima di caricare una copia.'); return; }
+    var ok;
+    try { ok = leggiCopia(text); } catch (e) { say('Questa non è una copia valida di Scadenzario.'); return; }
+    daImportare = ok;
+    var mie = items.filter(function (x) { return !x.example; }).length;
+    $('import-testo').textContent = 'Ho trovato ' + plural(ok.length, 'scadenza', 'scadenze') + ' nella copia.' + (mie ? ' Su questo telefono ne hai ' + mie + '. Cosa vuoi fare?' : ' Cosa vuoi fare?');
+    $('import-box').hidden = false;
+    $('copie').open = true;
+  }
+
+  $('salva-copia').addEventListener('click', function () {
+    if (demo) { say('In demo i dati sono di esempio: esci dalla demo per salvare i tuoi.'); return; }
+    var name = 'Scadenzario-copia-' + iso(today()) + '.json';
+    var blob = new Blob([datiCopia()], { type: 'application/json' });
+    var file = null;
+    try { file = new File([blob], name, { type: 'application/json' }); } catch (e) {}
+    function scarica() {
+      try {
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url; a.download = name;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+        segnaCopia();
+        say("File scaricato. Lo trovi nell'app File, in Download.");
+      } catch (e) { say('Non riesco a creare il file in questa finestra. Prova con Copia negli appunti.'); }
+    }
+    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file], title: 'Copia di Scadenzario' }).then(function () {
+        segnaCopia(); say('Copia salvata.');
+      }, function (err) { if (!err || err.name !== 'AbortError') scarica(); });
+    } else scarica();
+  });
+
+  $('carica-copia').addEventListener('click', function () {
+    if (demo) { say('Esci dalla demo prima di caricare una copia.'); return; }
+    $('file-copia').click();
+  });
+  $('file-copia').addEventListener('change', function () {
+    var inp = this, f = inp.files && inp.files[0];
+    if (!f) return;
+    var r = new FileReader();
+    r.onload = function () { proponiImport(String(r.result)); };
+    r.onerror = function () { say('Non riesco a leggere il file.'); };
+    r.readAsText(f);
+    inp.value = '';
+  });
+  $('import-sostituisci').addEventListener('click', function () {
+    var n = daImportare;
+    if (!n) return;
+    items = n; chiudiImport(); save(); render();
+    say('Ripristinate ' + plural(n.length, 'scadenza', 'scadenze') + '.');
+  });
+  $('import-aggiungi').addEventListener('click', function () {
+    if (!daImportare) return;
+    var ids = {};
+    items.forEach(function (x) { ids[x.id] = 1; });
+    var nuove = daImportare.filter(function (x) { return !ids[x.id]; });
+    items = items.concat(nuove);
+    chiudiImport(); save(); render();
+    say(nuove.length ? 'Aggiunte ' + plural(nuove.length, 'scadenza', 'scadenze') + '.' : 'Erano già tutte presenti.');
+  });
+  $('import-annulla').addEventListener('click', chiudiImport);
+
+  $('copia-appunti').addEventListener('click', function () {
+    if (demo) { say('In demo i dati sono di esempio: esci dalla demo per copiare i tuoi.'); return; }
+    copyText(datiCopia(), "Copia negli appunti fatta. Sull'altro telefono tocca Incolla dagli appunti.");
+    segnaCopia();
+  });
+  $('incolla-appunti').addEventListener('click', function () {
+    if (demo) { say('Esci dalla demo prima di caricare una copia.'); return; }
+    try {
+      navigator.clipboard.readText().then(proponiImport, function () { say("Non riesco a leggere gli appunti. Consenti l'incolla quando il telefono lo chiede."); });
+    } catch (e) { say('Gli appunti non sono disponibili in questa finestra.'); }
+  });
   $('copia-elenco').addEventListener('click', function () {
     var rows = items.slice().sort(function (a, b) { return parse(nextOcc(a)) - parse(nextOcc(b)); })
       .map(function (i) { return i.name + ' - ' + fmtLong(nextOcc(i)); });
-    copy(rows.length ? rows.join('\n') : 'Nessuna scadenza.');
-  });
-  $('copia-dati').addEventListener('click', function () { copy(JSON.stringify(items)); });
-  $('ripristina').addEventListener('click', function () {
-    try {
-      var arr = JSON.parse($('io').value);
-      if (!Array.isArray(arr)) throw new Error('formato');
-      var ok = arr.filter(function (i) { return i && typeof i.name === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(i.date); })
-        .map(function (i) { return { id: i.id || uid(), name: i.name, date: i.date, months: i.months > 0 ? i.months : 12, note: i.note || '', example: !!i.example, rev: i.rev || 0, rep: i.rep > 0 ? i.rep : 0, cal0: i.cal0 || '', exp: '', pend: '', k: i.k || '', amt: toAmt(i.amt), est: !!i.est }; });
-      if (!ok.length) throw new Error('vuoto');
-      items = ok; save(); render();
-      say('Ripristinate ' + plural(ok.length, 'scadenza', 'scadenze') + '.');
-    } catch (e) {
-      say('Il testo non è nel formato giusto. Usa quello ottenuto con Copia dati.');
-    }
+    copyText(rows.length ? rows.join('\n') : 'Nessuna scadenza.', 'Elenco copiato.');
   });
 
   /* condividi, guida Home, aggiornamenti */
@@ -1326,6 +1456,22 @@ body.guide-open { position: fixed; left: 0; right: 0; width: 100%; overflow: hid
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') checkUpdate(); });
   window.addEventListener('pageshow', checkUpdate);
   window.addEventListener('online', checkUpdate);
+
+  /* modalità demo: dati di esempio solo in memoria, mai salvati */
+  function demoOn() {
+    realItems = items; items = seed(); demo = true;
+    daImportare = null; $('import-box').hidden = true;
+    editId = null; pendingDel = null; clearTimeout(delTimer);
+    render(); say('Modalità demo attiva: nulla viene salvato.');
+    window.scrollTo(0, 0);
+  }
+  function demoOff() {
+    items = realItems || []; realItems = null; demo = false;
+    editId = null; pendingDel = null; clearTimeout(delTimer);
+    openForm(false); render(); say('Sei tornato alle tue scadenze.');
+  }
+  $('demo-link').addEventListener('click', function () { if (demo) demoOff(); else demoOn(); });
+  $('esci-demo').addEventListener('click', demoOff);
 
   /* menu in alto */
   function menuOpen(show) {
