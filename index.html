@@ -6,12 +6,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Scadenzario">
-<meta name="app-version" content="9">
 <meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icon-192.png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="apple-touch-icon" href="icon-180.png">
 <style>
 :root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 body{margin:0}
@@ -201,7 +200,56 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
 .sheet ol.steps { font-size: 15px; }
 .sheet-x { background: var(--fill); border: 0; color: var(--muted); width: 32px; height: 32px; display: grid; place-items: center; cursor: pointer; border-radius: 50%; flex: none; }
 .ico { vertical-align: -4px; margin: 0 1px; }
-#installa { width: 100%; }
+#installa, #copia-link { width: 100%; }
+body.has-update { padding-block-end: 210px; }
+
+/* Istruzioni illustrate */
+.guide { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-end; justify-content: center;
+  padding: 12px max(12px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 12px) max(12px, env(safe-area-inset-left, 0px));
+  background: rgba(0, 0, 0, 0.45); }
+.guide-card { width: 100%; max-width: 440px; max-height: 100%; overflow-y: auto; outline: none; display: flex; flex-direction: column; gap: 14px;
+  background: var(--surface); border-radius: 28px; padding: 18px 18px 16px; animation: rise 0.32s cubic-bezier(0.2, 0.9, 0.3, 1); }
+@media (min-width: 560px) { .guide { align-items: center; } }
+@media (prefers-reduced-motion: reduce) { .guide-card { animation: none; } }
+.g-slide { display: flex; flex-direction: column; gap: 10px; text-align: center; }
+.g-slide h2 { font-family: var(--font-display); font-size: 22px; font-weight: 700; line-height: 1.2; text-wrap: balance; }
+.g-slide p { font-size: 16px; color: var(--muted); max-width: 34ch; margin: 0 auto; }
+.g-art { background: var(--fill); border-radius: 20px; overflow: hidden; }
+.g-art svg { display: block; width: 100%; height: auto; }
+.g-art .card { fill: var(--surface); }
+.g-art .well { fill: var(--fill); }
+.g-art .ln { fill: var(--line); }
+.g-art .acc { fill: var(--accent); }
+.g-art .tint { fill: var(--tint); }
+.g-art .ring { fill: none; stroke: var(--accent); stroke-width: 3; opacity: 0.5; }
+.g-art .late-b { fill: var(--late-bg); } .g-art .late-f { fill: var(--late-fg); }
+.g-art .soon-b { fill: var(--soon-bg); } .g-art .soon-f { fill: var(--soon-fg); }
+.g-art .ok-b { fill: var(--ok-bg); } .g-art .ok-f { fill: var(--ok-fg); }
+.g-art .on-acc { fill: var(--on-accent); }
+.g-art .fgt { fill: var(--fg); }
+.g-art .mut { fill: var(--muted); }
+.g-art .stk { fill: none; stroke: var(--accent); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
+.g-art .stk-w { fill: none; stroke: var(--on-accent); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.g-art text { font-family: var(--font-body); font-weight: 700; }
+.dots { display: flex; justify-content: center; gap: 8px; }
+.dots span { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+.dots span.on { background: var(--accent); }
+.guide-btns { display: flex; gap: 10px; }
+.guide-btns .btn { flex: 1 1 0; }
+#g-salta { background: var(--fill); color: var(--muted); }
+.confirm { display: flex; flex-direction: column; gap: 8px; background: var(--fill); border-radius: 14px; padding: 10px 12px; margin-top: 4px; }
+.confirm p { font-size: 14px; color: var(--fg); }
+.confirm .acts { margin-top: 0; }
+#sheets-bottom {
+  position: fixed; z-index: 21;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+  left: max(8px, env(safe-area-inset-left, 0px));
+  right: max(8px, env(safe-area-inset-right, 0px));
+  display: flex; justify-content: center; pointer-events: none;
+}
+#sheets-bottom .sheet:not([hidden]) { animation: rise 0.32s cubic-bezier(0.2, 0.9, 0.3, 1); }
+@keyframes rise { from { transform: translateY(18px) scale(0.97); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { #sheets-bottom .sheet:not([hidden]) { animation: none; } }
 </style>
 
 </head>
@@ -209,17 +257,19 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
 <div id="sheets">
   <section class="sheet" id="home-sheet" role="dialog" aria-labelledby="home-title" hidden>
     <div class="sheet-head">
-      <h2 id="home-title">Aggiungi Scadenzario alla Home</h2>
+      <h2 id="home-title">Usala come una vera app</h2>
       <button type="button" class="sheet-x" id="home-close" aria-label="Chiudi">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg>
       </button>
     </div>
+    <p id="home-intro">Aprila dalla Home: a tutto schermo e utilizzabile anche senza connessione.</p>
+    <p id="inapp-msg" hidden></p>
+    <button type="button" class="btn primary" id="copia-link" hidden>Copia il link</button>
     <ol class="steps" id="steps-ios">
       <li>Tocca <svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg> <b>Condividi</b> nella barra di Safari. In alcune versioni è dentro il menu dei tre puntini.</li>
       <li>Scorri e tocca <b>Aggiungi alla schermata Home</b>.</li>
       <li>Tocca <b>Aggiungi</b>.</li>
     </ol>
-    <p id="and-intro" hidden>Aprila dalla Home come un'app: a tutto schermo e utilizzabile anche senza connessione.</p>
     <ol class="steps" id="steps-and" hidden>
       <li>In Chrome tocca i <b>tre puntini</b> in alto a destra.</li>
       <li>Tocca <b>Installa app</b> oppure <b>Aggiungi a schermata Home</b>.</li>
@@ -229,6 +279,9 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
     <p id="and-note" hidden>Con Samsung Internet: tocca il menu in basso, poi Aggiungi pagina a, poi Schermata Home.</p>
     <p id="home-note">Prima tocca Copia dati in fondo alla pagina: l'icona può avere uno spazio dati separato da Safari.</p>
   </section>
+</div>
+
+<div id="sheets-bottom">
   <section class="sheet" id="update-sheet" role="status" hidden>
     <div class="sheet-head"><h2>Nuova versione disponibile</h2></div>
     <p id="update-text">Le tue scadenze restano al loro posto.</p>
@@ -237,6 +290,81 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
       <button type="button" class="btn small" id="piu-tardi">Più tardi</button>
     </div>
   </section>
+</div>
+
+<div class="guide" id="guida" role="dialog" aria-modal="true" aria-label="Come si usa" hidden>
+  <div class="guide-card" id="guida-card" tabindex="-1">
+    <section class="g-slide" hidden>
+      <div class="g-art" aria-hidden="true"><svg viewBox="0 0 320 180">
+        <rect class="card" x="24" y="14" width="272" height="152" rx="20"/>
+        <rect class="acc" x="44" y="32" width="150" height="38" rx="13"/>
+        <text class="on-acc" x="119" y="56" font-size="13" text-anchor="middle">Aggiungi scadenza</text>
+        <circle class="ring" cx="188" cy="68" r="14"/><circle class="acc" cx="188" cy="68" r="5" opacity="0.85"/>
+        <rect class="well" x="44" y="88" width="232" height="62" rx="14"/>
+        <rect class="ln" x="58" y="100" width="92" height="9" rx="4.5"/>
+        <rect class="ln" x="58" y="120" width="60" height="9" rx="4.5"/>
+        <rect class="card" x="170" y="102" width="92" height="30" rx="10"/>
+        <text class="fgt" x="216" y="122" font-size="12" text-anchor="middle">12 mar 2027</text>
+      </svg></div>
+      <h2>Aggiungi le scadenze</h2>
+      <p>Tocca Aggiungi scadenza e scegli dall'elenco: patente, bollo, abbonamenti. Basta la data.</p>
+    </section>
+    <section class="g-slide" hidden>
+      <div class="g-art" aria-hidden="true"><svg viewBox="0 0 320 180">
+        <rect class="card" x="24" y="12" width="272" height="46" rx="15"/>
+        <rect class="late-b" x="34" y="19" width="36" height="32" rx="10"/><text class="late-f" x="52" y="40" font-size="15" text-anchor="middle">20</text>
+        <rect class="late-b" x="82" y="21" width="86" height="15" rx="7.5"/><text class="late-f" x="125" y="32" font-size="10" text-anchor="middle">Scaduta</text>
+        <rect class="ln" x="82" y="42" width="150" height="6" rx="3"/>
+        <rect class="card" x="24" y="67" width="272" height="46" rx="15"/>
+        <rect class="soon-b" x="34" y="74" width="36" height="32" rx="10"/><text class="soon-f" x="52" y="95" font-size="15" text-anchor="middle">04</text>
+        <rect class="soon-b" x="82" y="76" width="86" height="15" rx="7.5"/><text class="soon-f" x="125" y="87" font-size="10" text-anchor="middle">Tra 6 giorni</text>
+        <rect class="ln" x="82" y="97" width="150" height="6" rx="3"/>
+        <rect class="card" x="24" y="122" width="272" height="46" rx="15"/>
+        <rect class="ok-b" x="34" y="129" width="36" height="32" rx="10"/><text class="ok-f" x="52" y="150" font-size="15" text-anchor="middle">15</text>
+        <rect class="ok-b" x="82" y="131" width="86" height="15" rx="7.5"/><text class="ok-f" x="125" y="142" font-size="10" text-anchor="middle">Tra 3 mesi</text>
+        <rect class="ln" x="82" y="152" width="150" height="6" rx="3"/>
+      </svg></div>
+      <h2>Guarda i colori</h2>
+      <p>Rosso: scaduta. Arancione: sta per scadere. Verde: hai tempo.</p>
+    </section>
+    <section class="g-slide" hidden>
+      <div class="g-art" aria-hidden="true"><svg viewBox="0 0 320 180">
+        <rect class="late-b" x="34" y="22" width="84" height="84" rx="20"/>
+        <text class="late-f" x="76" y="66" font-size="32" text-anchor="middle">20</text>
+        <text class="late-f" x="76" y="88" font-size="12" text-anchor="middle">OTT 2026</text>
+        <path class="stk" d="M130 64H184M172 52L186 64L172 76"/>
+        <rect class="ok-b" x="202" y="22" width="84" height="84" rx="20"/>
+        <text class="ok-f" x="244" y="66" font-size="32" text-anchor="middle">20</text>
+        <text class="ok-f" x="244" y="88" font-size="12" text-anchor="middle">OTT 2028</text>
+        <rect class="tint" x="82" y="126" width="156" height="36" rx="18"/>
+        <text x="160" y="149" font-size="13" text-anchor="middle" fill="var(--accent)">Rinnovata (+2 anni)</text>
+        <circle class="ring" cx="238" cy="150" r="13"/><circle class="acc" cx="238" cy="150" r="4.5" opacity="0.85"/>
+      </svg></div>
+      <h2>Rinnova con un tocco</h2>
+      <p>Quando la rinnovi, tocca Rinnovata. La data va avanti da sola.</p>
+    </section>
+    <section class="g-slide" hidden>
+      <div class="g-art" aria-hidden="true"><svg viewBox="0 0 320 180">
+        <rect class="card" x="26" y="14" width="268" height="56" rx="18"/>
+        <circle class="acc" cx="56" cy="42" r="15"/>
+        <path class="on-acc" d="M49.5 48h13l-2.2-3.2v-5.3a4.3 4.3 0 0 0-8.6 0v5.3z"/><circle class="on-acc" cx="56" cy="51.5" r="2"/>
+        <text class="fgt" x="82" y="38" font-size="13">Passaporto</text>
+        <text class="mut" x="82" y="55" font-size="11.5" style="font-weight:500">scade tra 30 giorni</text>
+        <rect class="card" x="58" y="82" width="204" height="86" rx="16"/>
+        <path class="late-f" d="M58 98a16 16 0 0 1 16-16h172a16 16 0 0 1 16 16v6H58z"/>
+        <circle class="ln" cx="84" cy="120" r="3.2"/><circle class="ln" cx="110" cy="120" r="3.2"/><circle class="ln" cx="136" cy="120" r="3.2"/><circle class="ln" cx="162" cy="120" r="3.2"/><circle class="ln" cx="188" cy="120" r="3.2"/><circle class="ln" cx="214" cy="120" r="3.2"/><circle class="ln" cx="240" cy="120" r="3.2"/>
+        <circle class="ln" cx="84" cy="146" r="3.2"/><circle class="ln" cx="110" cy="146" r="3.2"/><circle class="ln" cx="136" cy="146" r="3.2"/><circle class="ln" cx="214" cy="146" r="3.2"/><circle class="ln" cx="240" cy="146" r="3.2"/>
+        <circle class="acc" cx="162" cy="146" r="11"/><path class="stk-w" d="M156.5 146.5l4 4 7.5-8"/>
+      </svg></div>
+      <h2>Ricevi gli avvisi</h2>
+      <p>Tocca Aggiungi al Calendario e apri il file. Gli avvisi li manda il Calendario del telefono. I tuoi dati restano sul telefono.</p>
+    </section>
+    <div class="dots" id="g-dots" aria-hidden="true"></div>
+    <div class="guide-btns">
+      <button type="button" class="btn" id="g-salta">Salta</button>
+      <button type="button" class="btn primary" id="g-avanti">Avanti</button>
+    </div>
+  </div>
 </div>
 
 <main class="wrap">
@@ -261,7 +389,7 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
         <label for="tipo">Tipo</label>
         <select id="tipo"></select>
       </div>
-      <div class="field wide">
+      <div class="field wide" id="f-nome" hidden>
         <label for="nome">Nome</label>
         <input id="nome" type="text" required maxlength="80" placeholder="Es. Passaporto di Marta">
       </div>
@@ -285,7 +413,7 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
         <label for="mesi">Dura (mesi)</label>
         <input id="mesi" type="number" inputmode="numeric" min="1" max="240" value="12">
       </div>
-      <div class="field wide">
+      <div class="field wide" id="f-nota" hidden>
         <label for="nota">Cosa fare</label>
         <input id="nota" type="text" maxlength="200" placeholder="Facoltativo">
       </div>
@@ -319,7 +447,7 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
 
   <p id="msg" role="status" aria-live="polite"></p>
   <p class="foot" id="foot"></p>
-  <p class="links"><button type="button" class="link" id="home-link">Aggiungi alla Home</button><button type="button" class="link" id="condividi">Condividi con un amico</button><button type="button" class="link" id="verifica">Controlla aggiornamenti</button></p>
+  <p class="links"><button type="button" class="link" id="guida-link">Come si usa</button><button type="button" class="link" id="home-link">Aggiungi alla Home</button><button type="button" class="link" id="condividi">Condividi con un amico</button><button type="button" class="link" id="verifica">Controlla aggiornamenti</button></p>
   <p class="foot" id="ver" style="text-align:center"></p>
 </main>
 
@@ -463,6 +591,7 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
         var confirming = pendingDel === it.id;
         var calLabel = !it.exp ? 'Aggiungi al Calendario' : it.exp !== it.date ? 'Aggiorna nel Calendario' : 'Già nel Calendario';
         var calHot = it.exp && it.exp !== it.date ? ' hot' : '';
+        var inCal = it.exp || it.pend;
         return '<li class="item ' + cls(n) + '">' +
           '<div class="stub"><span class="d">' + String(d.getDate()).padStart(2, '0') + '</span><span class="m">' + MESI[d.getMonth()] + '</span><span class="y">' + d.getFullYear() + '</span></div>' +
           '<div class="body">' +
@@ -474,11 +603,12 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
               (isAndroid ? actBtn('gcal', it.id, 'Google Calendar') : '') +
               (it.rep ? '' : '<button type="button" class="btn small" data-act="rinnova" data-id="' + it.id + '">Rinnovata (' + renewLabel(it.months || 12) + ')</button>') +
               (confirming
-                ? (it.exp && !isAndroid
+                ? (inCal && !isAndroid
                     ? actBtn('elimina-cal', it.id, 'Elimina e togli dal Calendario', ' hot') + actBtn('elimina-solo', it.id, 'Elimina solo qui') + actBtn('annulla-del', it.id, 'Annulla')
                     : actBtn('elimina-solo', it.id, 'Tocca ancora per eliminare'))
                 : actBtn('elimina', it.id, 'Elimina')) +
             '</div>' +
+            (it.pend ? '<div class="confirm"><p>Hai aggiunto l\'evento al Calendario?</p><div class="acts">' + actBtn('cal-ok', it.id, 'Sì, aggiunto', ' primary') + actBtn('cal-no', it.id, 'Non ancora') + '</div></div>' : '') +
           '</div></li>';
       }).join('');
     }
@@ -496,6 +626,10 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
     $('nota').value = c.note;
     $('data').value = c.date ? c.date() : '';
     $('rep').value = String(c.rep || 0);
+    var altro = c.k === 'altro';
+    $('f-nome').hidden = !altro;
+    $('f-nota').hidden = !altro;
+    $('nome').required = altro;
     syncRep();
   }
   function syncRep() {
@@ -509,7 +643,7 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
   function openForm(show) {
     $('form').hidden = !show;
     $('apri').setAttribute('aria-expanded', show ? 'true' : 'false');
-    if (show) { fillFromType(); $('nome').focus(); }
+    if (show) fillFromType();
   }
   $('apri').addEventListener('click', function () { openForm($('form').hidden); });
   $('annulla').addEventListener('click', function () { openForm(false); });
@@ -540,11 +674,14 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
     if (!it) return;
     var act = b.getAttribute('data-act');
     if (act === 'cal') { exportCal([it]); return; }
-    if (act === 'gcal') { var gu = gcalUrl(it); var w = window.open(gu, '_blank'); if (!w) location.href = gu; return; }
+    if (act === 'gcal') { it.pend = it.date; save(); render(); var gu = gcalUrl(it); var w = window.open(gu, '_blank'); if (!w) location.href = gu; return; }
+    if (act === 'cal-ok') { it.exp = it.pend; it.pend = ''; save(); render(); say('Segnato: la scadenza è nel Calendario.'); return; }
+    if (act === 'cal-no') { it.pend = ''; save(); render(); return; }
     if (act === 'rinnova') {
       var base = daysLeft(it.date) < 0 ? iso(today()) : it.date;
       it.date = addMonths(base, it.months || 12);
       it.rev = (it.rev || 0) + 1;
+      it.pend = '';
       save(); render();
       say(it.name + ': nuova scadenza il ' + fmtLong(it.date) + '.');
     } else if (act === 'elimina') {
@@ -559,7 +696,7 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
       pendingDel = null; clearTimeout(delTimer);
       save(); render();
       if (withCal) exportCancel(it);
-      else if (it.exp && isAndroid) say("Scadenza eliminata. Togli l'evento anche dal Calendario: da Android la pagina non può farlo.");
+      else if ((it.exp || it.pend) && isAndroid) say("Scadenza eliminata. Togli l'evento anche dal Calendario: da Android la pagina non può farlo.");
       else say('Scadenza eliminata.');
     }
   });
@@ -571,7 +708,7 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
 
   /* calendario */
   function pad(n) { return String(n).padStart(2, '0'); }
-  function icsEsc(t) { return String(t).replace(/\\/g, '\\\\').replace(/;/g, '\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n'); }
+  function icsEsc(t) { return String(t).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n'); }
   function fold(line) {
     var out = [], t = line;
     while (t.length > 72) { out.push(t.slice(0, 72)); t = ' ' + t.slice(72); }
@@ -627,7 +764,7 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
       a.href = url; a.download = (slug || 'scadenza') + '.ics';
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
-      list.forEach(function (i) { i.exp = i.date; });
+      list.forEach(function (i) { i.pend = i.date; });
       save(); render();
       say(isAndroid ? 'File scaricato. Aprilo dalla notifica di Chrome o dalla cartella Download e scegli Calendario.' : 'File pronto. Aprilo e tocca Aggiungi: meglio in un calendario chiamato Scadenzario.');
     } catch (e) {
@@ -647,7 +784,7 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
   }
   function buildCancelIcs(it) {
     var r = it.rep || 0;
-    var startIso = r ? (it.cal0 || nextOcc(it)) : (it.exp || it.date);
+    var startIso = r ? (it.cal0 || nextOcc(it)) : (it.exp || it.pend || it.date);
     var d = parse(startIso), next = iso(addDays(d, 1));
     var L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Scadenzario//IT', 'CALSCALE:GREGORIAN', 'METHOD:CANCEL',
       'BEGIN:VEVENT', 'UID:' + it.id + '@scadenzario', 'DTSTAMP:' + utcStamp(new Date()), 'SEQUENCE:' + ((it.rev || 0) + 1), 'STATUS:CANCELLED',
@@ -693,7 +830,7 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
       var arr = JSON.parse($('io').value);
       if (!Array.isArray(arr)) throw new Error('formato');
       var ok = arr.filter(function (i) { return i && typeof i.name === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(i.date); })
-        .map(function (i) { return { id: i.id || uid(), name: i.name, date: i.date, months: i.months > 0 ? i.months : 12, note: i.note || '', example: !!i.example, rev: i.rev || 0, rep: i.rep > 0 ? i.rep : 0, cal0: i.cal0 || '', exp: '' }; });
+        .map(function (i) { return { id: i.id || uid(), name: i.name, date: i.date, months: i.months > 0 ? i.months : 12, note: i.note || '', example: !!i.example, rev: i.rev || 0, rep: i.rep > 0 ? i.rep : 0, cal0: i.cal0 || '', exp: '', pend: '' }; });
       if (!ok.length) throw new Error('vuoto');
       items = ok; save(); render();
       say('Ripristinate ' + plural(ok.length, 'scadenza', 'scadenze') + '.');
@@ -715,95 +852,167 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
     } catch (e) { say('Copia questo indirizzo: ' + url); }
   });
 
-  function showSheet(id, show) { $(id).hidden = !show; }
-  var HOME_KEY = 'scadenzario.home.chiusa';
-  function homeClosed() { try { return localStorage.getItem(HOME_KEY) === '1'; } catch (e) { return false; } }
-  var installed = (window.navigator && window.navigator.standalone) || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
-  var isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  var installEvt = null;
-  if (isAndroid) {
-    $('steps-ios').hidden = true;
-    $('steps-and').hidden = false;
-    $('and-note').hidden = false;
-    $('and-intro').hidden = false;
-    $('home-note').hidden = true;
-    $('home-title').textContent = 'Installa Scadenzario';
-    $('home-link').textContent = 'Installa app';
+  function showSheet(id, show) {
+    $(id).hidden = !show;
+    if (id === 'update-sheet') document.body.classList.toggle('has-update', show);
   }
-  if (installed) $('home-link').hidden = true;
+
+  /* guida "Usala come una vera app" */
+  var HOME_KEY = 'scadenzario.home.chiusa';
+  var QUATTORDICI_GIORNI = 14 * 864e5;
+  function homeClosed() {
+    try { var ts = parseInt(localStorage.getItem(HOME_KEY), 10); return !!ts && Date.now() - ts < QUATTORDICI_GIORNI; }
+    catch (e) { return false; }
+  }
+  var UA = navigator.userAgent;
+  var installed = (window.navigator && window.navigator.standalone) || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+  var isIos = /iPad|iPhone|iPod/.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var inApp = /FBAN|FBAV|FB_IAB|FBIOS|Instagram|Snapchat|TikTok|musical_ly|Twitter|LinkedInApp|MicroMessenger|Line\/|GSA\/|WhatsApp|Telegram|; wv\)/i.test(UA) ||
+    (isIos && !/Safari\//.test(UA) && !/CriOS|FxiOS|EdgiOS/.test(UA));
+  var onPhone = isIos || isAndroid;
+  var installEvt = null;
+
+  function layoutHome() {
+    var ok = !inApp;
+    $('home-intro').hidden = !ok;
+    $('inapp-msg').hidden = ok;
+    $('copia-link').hidden = ok;
+    $('steps-ios').hidden = !(ok && isIos);
+    $('home-note').hidden = !(ok && isIos);
+    $('steps-and').hidden = !(ok && isAndroid && !installEvt);
+    $('and-note').hidden = $('steps-and').hidden;
+    $('installa').hidden = !(ok && isAndroid && installEvt);
+    if (!ok) $('inapp-msg').textContent = 'Qui dentro non si può installare. Apri il link in ' + (isIos ? 'Safari' : 'Chrome') + '.';
+    $('home-link').textContent = isAndroid && !inApp ? 'Installa app' : 'Aggiungi alla Home';
+  }
+  layoutHome();
+  if (installed || !onPhone) $('home-link').hidden = true;
   $('home-link').addEventListener('click', function () { showSheet('home-sheet', true); });
   $('home-close').addEventListener('click', function () {
     showSheet('home-sheet', false);
-    try { localStorage.setItem(HOME_KEY, '1'); } catch (e) {}
+    try { localStorage.setItem(HOME_KEY, String(Date.now())); } catch (e) {}
+  });
+  $('copia-link').addEventListener('click', function () {
+    var link = location.origin + location.pathname;
+    var fail = function () { $('inapp-msg').textContent = 'Copia questo indirizzo e aprilo in ' + (isIos ? 'Safari' : 'Chrome') + ': ' + link; };
+    try {
+      navigator.clipboard.writeText(link).then(function () { $('copia-link').textContent = 'Link copiato'; }, fail);
+    } catch (e) { fail(); }
   });
   window.addEventListener('beforeinstallprompt', function (e) {
     e.preventDefault();
     installEvt = e;
-    $('installa').hidden = false;
-    $('steps-and').hidden = true;
-    $('and-note').hidden = true;
-    if (isAndroid && !installed && !homeClosed()) showSheet('home-sheet', true);
+    layoutHome();
+    if (!installed && !inApp && !homeClosed() && $('guida').hidden) showSheet('home-sheet', true);
   });
   $('installa').addEventListener('click', function () {
     if (!installEvt) return;
     installEvt.prompt();
-    installEvt.userChoice.then(function () { installEvt = null; $('installa').hidden = true; showSheet('home-sheet', false); }, function () {});
+    installEvt.userChoice.then(function () { installEvt = null; layoutHome(); showSheet('home-sheet', false); }, function () {});
   });
   window.addEventListener('appinstalled', function () {
     showSheet('home-sheet', false);
     $('home-link').hidden = true;
   });
-  if (isIos && !installed && !homeClosed()) setTimeout(function () { showSheet('home-sheet', true); }, 700);
-  if (isAndroid && !installed && !homeClosed()) setTimeout(function () { if (!installEvt) showSheet('home-sheet', true); }, 2500);
+  function startHome() {
+    if (installed || !onPhone || homeClosed()) return;
+    if (isAndroid && !inApp) {
+      if (installEvt) showSheet('home-sheet', true);
+      else setTimeout(function () { if (!installEvt && $('guida').hidden) showSheet('home-sheet', true); }, 2500);
+    } else {
+      setTimeout(function () { if ($('guida').hidden) showSheet('home-sheet', true); }, 700);
+    }
+  }
 
+  /* istruzioni illustrate: si aprono da sole al primo utilizzo e dal link in fondo */
+  var GUIDA_KEY = 'scadenzario.guida.vista';
+  var gSlides = Array.prototype.slice.call(document.querySelectorAll('.g-slide'));
+  var gIdx = 0, gFirst = false, gReturn = null;
+  $('g-dots').innerHTML = gSlides.map(function () { return '<span></span>'; }).join('');
+  function gShow(n) {
+    gIdx = n;
+    gSlides.forEach(function (el, k) { el.hidden = k !== n; });
+    Array.prototype.forEach.call($('g-dots').children, function (d, k) { d.className = k === n ? 'on' : ''; });
+    var last = n === gSlides.length - 1;
+    $('g-avanti').textContent = last ? 'Inizia' : 'Avanti';
+    $('g-salta').hidden = last;
+  }
+  function gOpen(first) {
+    gFirst = !!first;
+    gReturn = document.activeElement;
+    showSheet('home-sheet', false);
+    gShow(0);
+    $('guida').hidden = false;
+    $('guida-card').focus();
+  }
+  function gClose() {
+    if ($('guida').hidden) return;
+    $('guida').hidden = true;
+    try { localStorage.setItem(GUIDA_KEY, '1'); } catch (e) {}
+    if (gReturn && gReturn.focus) { try { gReturn.focus(); } catch (e) {} }
+    if (gFirst) { gFirst = false; startHome(); }
+  }
+  $('g-avanti').addEventListener('click', function () { if (gIdx < gSlides.length - 1) gShow(gIdx + 1); else gClose(); });
+  $('g-salta').addEventListener('click', gClose);
+  $('guida-link').addEventListener('click', function () { gOpen(false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') gClose(); });
+  var guidaDaMostrare = false;
+  try { guidaDaMostrare = !localStorage.getItem(GUIDA_KEY) && !localStorage.getItem(KEY); } catch (e) { guidaDaMostrare = false; }
+
+  /* service worker e aggiornamenti: la nuova versione aspetta, si installa solo con "Aggiorna" */
+  var swReg = null, wantReload = false, laterDismissed = false;
+  function showUpdate() { if (!laterDismissed) showSheet('update-sheet', true); }
+  function watch(w) {
+    w.addEventListener('statechange', function () {
+      if (w.state === 'installed' && navigator.serviceWorker.controller) showUpdate();
+    });
+  }
+  function askVersion() {
+    navigator.serviceWorker.ready.then(function (reg) { if (reg.active) reg.active.postMessage({ type: 'VERSION' }); });
+  }
   if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
-    window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
-  }
-
-  var localVer = (document.querySelector('meta[name="app-version"]') || {}).content || '';
-  var lastCheck = 0, newVer = '', laterVer = '';
-  $('ver').textContent = localVer ? 'Versione ' + localVer : '';
-
-  function remoteVersion() {
-    return fetch(location.pathname + '?check=' + Date.now(), { cache: 'no-store' })
-      .then(function (r) { return r.ok ? r.text() : ''; })
-      .then(function (t) { var m = t.match(/<meta name="app-version" content="([^"]+)"/); return m ? m[1] : ''; });
-  }
-  function checkUpdate(manual) {
-    if (!localVer) { if (manual) say('Il controllo funziona solo dalla pagina pubblicata online.'); return; }
-    if (!manual && Date.now() - lastCheck < 60000) return;
-    lastCheck = Date.now();
-    if (manual) say('Controllo in corso…');
-    remoteVersion().then(function (v) {
-      if (v && v !== localVer) {
-        newVer = v;
-        if (manual || v !== laterVer) {
-          $('update-text').textContent = 'Versione ' + v + ' disponibile. Le tue scadenze restano al loro posto.';
-          showSheet('update-sheet', true);
-        }
-        if (manual) say('');
-      } else if (manual) {
-        say(v ? 'Hai già la versione più recente (' + localVer + ').' : 'Non riesco a controllare ora. Verifica la connessione e riprova.');
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function (reg) {
+      swReg = reg;
+      if (reg.waiting && navigator.serviceWorker.controller) showUpdate();
+      if (reg.installing) watch(reg.installing);
+      reg.addEventListener('updatefound', function () { if (reg.installing) watch(reg.installing); });
+      askVersion();
+    }).catch(function () {});
+    navigator.serviceWorker.addEventListener('controllerchange', function () { if (wantReload) location.reload(); });
+    navigator.serviceWorker.addEventListener('message', function (e) {
+      if (e.data && e.data.type === 'VERSION') {
+        var m = /v(\d+)$/.exec(e.data.cache || '');
+        $('ver').textContent = m ? 'Versione ' + m[1] : '';
       }
-    }).catch(function () { if (manual) say('Non riesco a controllare ora. Verifica la connessione e riprova.'); });
+    });
   }
+  function checkUpdate() { if (swReg) swReg.update().catch(function () {}); }
   $('aggiorna').addEventListener('click', function () {
     var btn = $('aggiorna');
     btn.disabled = true; btn.textContent = 'Aggiorno…';
-    var target = location.pathname + '?v=' + (newVer || Date.now());
-    var go = function () { location.replace(target); };
-    fetch(target, { cache: 'reload' }).then(go, go);
+    wantReload = true;
+    var w = swReg && swReg.waiting;
+    if (w) w.postMessage({ type: 'SKIP_WAITING' });
+    setTimeout(function () { location.reload(); }, w ? 4000 : 800);
   });
-  $('piu-tardi').addEventListener('click', function () { laterVer = newVer; showSheet('update-sheet', false); });
-  $('verifica').addEventListener('click', function () { checkUpdate(true); });
-  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') checkUpdate(false); });
-  window.addEventListener('pageshow', function () { checkUpdate(false); });
-  window.addEventListener('online', function () { checkUpdate(false); });
-  setInterval(function () { if (document.visibilityState === 'visible') checkUpdate(false); }, 300000);
-  setTimeout(function () { checkUpdate(false); }, 1500);
+  $('piu-tardi').addEventListener('click', function () { laterDismissed = true; showSheet('update-sheet', false); });
+  $('verifica').addEventListener('click', function () {
+    if (!swReg) { say('Il controllo funziona solo dalla pagina pubblicata online.'); return; }
+    laterDismissed = false;
+    say('Controllo in corso…');
+    swReg.update().then(function () {
+      if (swReg.waiting) { say(''); showUpdate(); }
+      else if (swReg.installing) say('Scarico la nuova versione…');
+      else say('Hai già la versione più recente.');
+    }, function () { say('Non riesco a controllare ora. Verifica la connessione e riprova.'); });
+  });
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') checkUpdate(); });
+  window.addEventListener('pageshow', checkUpdate);
+  window.addEventListener('online', checkUpdate);
 
   load();
   render();
+  if (guidaDaMostrare) gOpen(true); else startHome();
 })();
 </script>
 </body>
