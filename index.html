@@ -175,6 +175,15 @@ ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column;
 #cal-hint { margin-top: -10px; }
 #cal-hint:empty { display: none; }
 
+/* Menu in alto */
+header { position: relative; z-index: 15; }
+.menu-btn { position: absolute; top: 0; right: 4px; width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 50%; background: var(--surface); color: var(--accent); cursor: pointer; }
+.menu-btn:active { opacity: 0.6; }
+.menu-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.menu { position: absolute; top: 46px; right: 4px; min-width: 230px; display: flex; flex-direction: column; padding: 4px 0; background: var(--sheet-bg); -webkit-backdrop-filter: blur(30px) saturate(1.8); backdrop-filter: blur(30px) saturate(1.8); border: 0.5px solid var(--line); border-radius: 16px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22); }
+.menu .link { text-align: left; padding: 10px 16px; min-height: 44px; color: var(--fg); }
+.menu .link + .link { border-top: 0.5px solid var(--line); }
+
 /* Avvisi in alto, come le notifiche di iOS */
 #sheets {
   position: fixed; z-index: 20;
@@ -214,6 +223,8 @@ body.has-update { padding-block-end: 210px; }
   background: var(--surface); border-radius: 28px; padding: 18px 18px 16px; animation: rise 0.32s cubic-bezier(0.2, 0.9, 0.3, 1); }
 @media (min-width: 560px) { .guide { align-items: center; } }
 @media (prefers-reduced-motion: reduce) { .guide-card { animation: none; } }
+body.guide-open { position: fixed; left: 0; right: 0; width: 100%; overflow: hidden; }
+.guide-card { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 .g-slide { display: flex; flex-direction: column; gap: 10px; text-align: center; }
 .g-slide h2 { font-family: var(--font-display); font-size: 22px; font-weight: 700; line-height: 1.2; text-wrap: balance; }
 .g-slide p { font-size: 16px; color: var(--muted); max-width: 34ch; margin: 0 auto; }
@@ -333,6 +344,18 @@ body.has-update { padding-block-end: 210px; }
     <p id="and-note" hidden>Con Samsung Internet: tocca il menu in basso, poi Aggiungi pagina a, poi Schermata Home.</p>
     <p id="home-note">Prima tocca Copia dati in fondo alla pagina: l'icona può avere uno spazio dati separato da Safari.</p>
   </section>
+  <section class="sheet" id="about-sheet" role="dialog" aria-labelledby="about-title" hidden>
+    <div class="sheet-head">
+      <h2 id="about-title">About us</h2>
+      <button type="button" class="sheet-x" id="about-close" aria-label="Chiudi">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg>
+      </button>
+    </div>
+    <p>Scadenzario: uno scadenzario per documenti, auto e abbonamenti. I dati restano sul tuo telefono.</p>
+    <p id="ver"></p>
+    <button type="button" class="btn small" id="verifica">Controlla aggiornamenti</button>
+    <p id="about-msg" role="status" aria-live="polite"></p>
+  </section>
 </div>
 
 <div id="sheets-bottom">
@@ -442,6 +465,15 @@ body.has-update { padding-block-end: 210px; }
   <header>
     <span class="today" id="oggi"></span>
     <h1>Scadenzario</h1>
+    <button type="button" class="menu-btn" id="menu-btn" aria-label="Menu" aria-expanded="false" aria-controls="menu">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+    </button>
+    <div class="menu" id="menu" hidden>
+      <button type="button" class="link" id="guida-link">Come si usa</button>
+      <button type="button" class="link" id="home-link">Aggiungi alla Home</button>
+      <button type="button" class="link" id="condividi">Condividi con un amico</button>
+      <button type="button" class="link" id="about-link">About us</button>
+    </div>
   </header>
 
   <nav class="tabs" aria-label="Sezioni">
@@ -543,8 +575,6 @@ body.has-update { padding-block-end: 210px; }
 
   <p id="msg" role="status" aria-live="polite"></p>
   <p class="foot" id="foot"></p>
-  <p class="links"><button type="button" class="link" id="guida-link">Come si usa</button><button type="button" class="link" id="home-link">Aggiungi alla Home</button><button type="button" class="link" id="condividi">Condividi con un amico</button><button type="button" class="link" id="verifica">Controlla aggiornamenti</button></p>
-  <p class="foot" id="ver" style="text-align:center"></p>
 </main>
 
 <script>
@@ -689,7 +719,7 @@ body.has-update { padding-block-end: 210px; }
     try { localStorage.setItem(KEY, JSON.stringify({ v: 1, items: items })); }
     catch (e) { storageOk = false; }
   }
-  function say(t) { $('msg').textContent = t; }
+  function say(t) { $('msg').textContent = t; $('about-msg').textContent = t; }
 
   function render() {
     var t = today();
@@ -1187,7 +1217,7 @@ body.has-update { padding-block-end: 210px; }
   /* istruzioni illustrate: si aprono da sole al primo utilizzo e dal link in fondo */
   var GUIDA_KEY = 'scadenzario.guida.vista';
   var gSlides = Array.prototype.slice.call(document.querySelectorAll('.g-slide'));
-  var gIdx = 0, gFirst = false, gReturn = null;
+  var gIdx = 0, gFirst = false, gReturn = null, gScrollY = 0;
   $('g-dots').innerHTML = gSlides.map(function () { return '<span></span>'; }).join('');
   function gShow(n) {
     gIdx = n;
@@ -1202,12 +1232,18 @@ body.has-update { padding-block-end: 210px; }
     gReturn = document.activeElement;
     showSheet('home-sheet', false);
     gShow(0);
+    gScrollY = window.scrollY || 0;
+    document.body.style.top = (-gScrollY) + 'px';
+    document.body.classList.add('guide-open');
     $('guida').hidden = false;
     $('guida-card').focus();
   }
   function gClose() {
     if ($('guida').hidden) return;
     $('guida').hidden = true;
+    document.body.classList.remove('guide-open');
+    document.body.style.top = '';
+    window.scrollTo(0, gScrollY);
     try { localStorage.setItem(GUIDA_KEY, '1'); } catch (e) {}
     if (gReturn && gReturn.focus) { try { gReturn.focus(); } catch (e) {} }
     if (gFirst) { gFirst = false; startHome(); }
@@ -1269,6 +1305,23 @@ body.has-update { padding-block-end: 210px; }
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') checkUpdate(); });
   window.addEventListener('pageshow', checkUpdate);
   window.addEventListener('online', checkUpdate);
+
+  /* menu in alto */
+  function menuOpen(show) {
+    $('menu').hidden = !show;
+    $('menu-btn').setAttribute('aria-expanded', show ? 'true' : 'false');
+  }
+  $('menu-btn').addEventListener('click', function (e) { e.stopPropagation(); menuOpen($('menu').hidden); });
+  $('menu').addEventListener('click', function () { menuOpen(false); });
+  document.addEventListener('click', function (e) { if (!e.target.closest('#menu')) menuOpen(false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') menuOpen(false); });
+  $('about-link').addEventListener('click', function () {
+    $('about-msg').textContent = '';
+    showSheet('about-sheet', true);
+    if ('serviceWorker' in navigator) askVersion();
+  });
+  $('about-close').addEventListener('click', function () { showSheet('about-sheet', false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') showSheet('about-sheet', false); });
 
   load();
   render();
