@@ -251,6 +251,9 @@ body.guide-open { position: fixed; left: 0; right: 0; width: 100%; overflow: hid
 .guide-btns { display: flex; gap: 10px; }
 .guide-btns .btn { flex: 1 1 0; }
 #g-salta { background: var(--fill); color: var(--muted); }
+.g-demo { text-align: left; }
+.g-demo .item { background: var(--fill); padding: 10px; gap: 12px; }
+.g-demo .stub { background-clip: padding-box; }
 .confirm { display: flex; flex-direction: column; gap: 8px; background: var(--fill); border-radius: 14px; padding: 10px 12px; margin-top: 4px; }
 .confirm p { font-size: 14px; color: var(--fg); }
 .confirm .acts { margin-top: 0; }
@@ -452,6 +455,11 @@ body.guide-open { position: fixed; left: 0; right: 0; width: 100%; overflow: hid
       </svg></div>
       <h2>Ricevi gli avvisi</h2>
       <p>Tocca Aggiungi al Calendario e apri il file. Gli avvisi li manda il Calendario del telefono. I tuoi dati restano sul telefono.</p>
+    </section>
+    <section class="g-slide" hidden>
+      <h2>Ecco un esempio</h2>
+      <p>Così appariranno le tue scadenze. Queste sono solo dimostrative: quando inizi, l'elenco è vuoto e pronto per le tue.</p>
+      <ul class="list g-demo" id="g-demo" aria-label="Esempio di scadenze"></ul>
     </section>
     <div class="dots" id="g-dots" aria-hidden="true"></div>
     <div class="guide-btns">
@@ -712,7 +720,7 @@ body.guide-open { position: fixed; left: 0; right: 0; width: 100%; overflow: hid
         if (o && Array.isArray(o.items)) { items = o.items; return; }
       } catch (e) {}
     }
-    items = seed();
+    items = [];
     save();
   }
   function save() {
@@ -1227,8 +1235,21 @@ body.guide-open { position: fixed; left: 0; right: 0; width: 100%; overflow: hid
     $('g-avanti').textContent = last ? 'Inizia' : 'Avanti';
     $('g-salta').hidden = last;
   }
+  function renderDemo() {
+    var nomi = ['Garanzia lavatrice', 'Revisione auto', 'Passaporto'];
+    var demo = seed().filter(function (x) { return nomi.indexOf(x.name) >= 0; })
+      .sort(function (a, b) { return nomi.indexOf(a.name) - nomi.indexOf(b.name); });
+    $('g-demo').innerHTML = demo.map(function (it) {
+      var n = daysLeft(it.date), d = parse(it.date);
+      return '<li class="item ' + cls(n) + '">' +
+        '<div class="stub"><span class="d">' + String(d.getDate()).padStart(2, '0') + '</span><span class="m">' + MESI[d.getMonth()] + '</span><span class="y">' + d.getFullYear() + '</span></div>' +
+        '<div class="body"><div class="top"><h3>' + esc(it.name) + '</h3><span class="chip">' + rel(n) + '</span></div>' +
+        (it.amt > 0 ? '<p class="price">' + fmtEur(it.amt) + '</p>' : '') + '</div></li>';
+    }).join('');
+  }
   function gOpen(first) {
     gFirst = !!first;
+    renderDemo();
     gReturn = document.activeElement;
     showSheet('home-sheet', false);
     gShow(0);
