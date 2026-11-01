@@ -1,7 +1,7 @@
 // Scadenzario - service worker.
-// OGNI VOLTA che cambi un file dell'app, aumenta il numero qui sotto (v15 -> v16 ...).
+// OGNI VOLTA che cambi un file dell'app, aumenta il numero qui sotto (v21 -> v22 ...).
 // Senza questo l'app non si accorge della novità.
-var CACHE = 'scadenzario-v20';
+var CACHE = 'scadenzario-v21';
 var ESSENZIALI = ['./', 'index.html'];
 var ALTRI = ['manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 

@@ -1319,9 +1319,17 @@ body.guide-open { position: fixed; left: 0; right: 0; width: 100%; overflow: hid
   layoutHome();
   if (installed || !onPhone) $('home-link').hidden = true;
   $('home-link').addEventListener('click', function () { showSheet('home-sheet', true); });
+  /* al primo utilizzo prima si vede la guida Home; le istruzioni dell'app arrivano dopo che l'avviso è chiuso */
+  var guidaPending = false;
+  function afterHome() {
+    if (!guidaPending) return;
+    guidaPending = false;
+    gOpen(false);
+  }
   $('home-close').addEventListener('click', function () {
     showSheet('home-sheet', false);
     try { localStorage.setItem(HOME_KEY, String(Date.now())); } catch (e) {}
+    afterHome();
   });
   $('copia-link').addEventListener('click', function () {
     var link = location.origin + location.pathname;
@@ -1339,11 +1347,12 @@ body.guide-open { position: fixed; left: 0; right: 0; width: 100%; overflow: hid
   $('installa').addEventListener('click', function () {
     if (!installEvt) return;
     installEvt.prompt();
-    installEvt.userChoice.then(function () { installEvt = null; layoutHome(); showSheet('home-sheet', false); }, function () {});
+    installEvt.userChoice.then(function () { installEvt = null; layoutHome(); showSheet('home-sheet', false); afterHome(); }, function () {});
   });
   window.addEventListener('appinstalled', function () {
     showSheet('home-sheet', false);
     $('home-link').hidden = true;
+    afterHome();
   });
   function startHome() {
     if (installed || !onPhone || homeClosed()) return;
@@ -1495,7 +1504,11 @@ body.guide-open { position: fixed; left: 0; right: 0; width: 100%; overflow: hid
 
   load();
   render();
-  if (guidaDaMostrare) gOpen(true); else startHome();
+  if (guidaDaMostrare && !installed && onPhone && !homeClosed()) {
+    guidaPending = true;
+    showSheet('home-sheet', true);
+  } else if (guidaDaMostrare) gOpen(true);
+  else startHome();
 })();
 </script>
 </body>
